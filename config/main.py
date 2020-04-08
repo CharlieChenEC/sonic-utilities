@@ -399,6 +399,45 @@ def interface_name_is_valid(interface_name):
                     return True
     return False
 
+
+def vlan_id_is_valid(vid):
+    """Check if the vlan id is in acceptable range (between 1 and 4094)
+    """
+
+    if vid<1 or vid>4094:
+        return False
+
+    return True
+
+def vni_id_is_valid(vni):
+    """Check if the vni id is in acceptable range (between 1 and 2^24)
+    """
+
+    if (vni < 1) or (vni > 16777215):
+        return False
+
+    return True
+
+def is_vni_vrf_mapped(ctx, vni):
+    """Check if the vni is mapped to vrf
+    """
+
+    found = 0
+    db = ctx.obj['db']
+    vrf_table = db.get_table('VRF')
+    vrf_keys = vrf_table.keys()
+    if vrf_keys is not None:
+      for vrf_key in vrf_keys:
+        if ('vni' in vrf_table[vrf_key] and vrf_table[vrf_key]['vni'] == vni):
+           found = 1
+           break
+
+    if (found == 1):
+        print "VNI {} mapped to Vrf {}, Please remove VRF VNI mapping".format(vni, vrf_key)
+        return False
+
+    return True
+
 def interface_name_to_alias(interface_name):
     """Return alias interface name if default name is given as argument
     """
@@ -538,7 +577,7 @@ def _is_neighbor_ipaddress(config_db, ipaddress):
 
 def _get_all_neighbor_ipaddresses(config_db, ignore_local_hosts=False):
     """Returns list of strings containing IP addresses of all BGP neighbors
-       if the flag ignore_local_hosts is set to True, additional check to see if 
+       if the flag ignore_local_hosts is set to True, additional check to see if
        if the BGP neighbor AS number is same as local BGP AS number, if so ignore that neigbor.
     """
     addrs = []
@@ -907,7 +946,7 @@ def load(filename, yes):
         # if any of the config files in linux host OR namespace is not present, return
         if not os.path.isfile(file):
             click.echo("The config_db file {} doesn't exist".format(file))
-            return 
+            return
 
         if namespace is None:
             command = "{} -j {} --write-to-db".format(SONIC_CFGGEN_PATH, file)
@@ -1125,7 +1164,7 @@ def load_minigraph(no_service_restart):
 
     if os.path.isfile('/etc/sonic/acl.json'):
         run_command("acl-loader update full /etc/sonic/acl.json", display_cmd=True)
-    
+
     # Write latest db version string into db
     db_migrator='/usr/bin/db_migrator.py'
     if os.path.isfile(db_migrator) and os.access(db_migrator, os.X_OK):
@@ -1135,7 +1174,7 @@ def load_minigraph(no_service_restart):
             else:
                 cfggen_namespace_option = " -n {}".format(namespace)
             run_command(db_migrator + ' -o set_version' + cfggen_namespace_option)
-     
+
     # We first run "systemctl reset-failed" to remove the "failed"
     # status from all services before we attempt to restart them
     if not no_service_restart:
@@ -1260,7 +1299,7 @@ def add(session_name, src_ip, dst_ip, dscp, ttl, gre_type, queue, policer):
 
     if queue is not None:
         session_info['queue'] = queue
-    
+
     """
     For multi-npu platforms we need to program all front asic namespaces
     """
@@ -1585,7 +1624,7 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
     for entry in interface_table:
         if (interface_name == entry[0]):
             ctx.fail("{} is a L3 interface!".format(interface_name))
-            
+
     members.append(interface_name)
     vlan['members'] = members
     db.set_entry('VLAN', vlan_name, vlan)
@@ -1683,7 +1722,7 @@ def add_snmp_agent_address(ctx, agentip, port, vrf):
     #Construct SNMP_AGENT_ADDRESS_CONFIG table key in the format ip|<port>|<vrf>
     key = agentip+'|'
     if port:
-        key = key+port   
+        key = key+port
     key = key+'|'
     if vrf:
         key = key+vrf
@@ -1704,7 +1743,7 @@ def del_snmp_agent_address(ctx, agentip, port, vrf):
 
     key = agentip+'|'
     if port:
-        key = key+port   
+        key = key+port
     key = key+'|'
     if vrf:
         key = key+vrf
@@ -1966,7 +2005,7 @@ def all(verbose):
         config_db = ConfigDBConnector(use_unix_socket_path=True, namespace=namespace)
         config_db.connect()
         bgp_neighbor_ip_list = _get_all_neighbor_ipaddresses(config_db, ignore_local_hosts)
-        for ipaddress in bgp_neighbor_ip_list: 
+        for ipaddress in bgp_neighbor_ip_list:
             _change_bgp_session_status_by_addr(config_db, ipaddress, 'up', verbose)
 
 # 'neighbor' subcommand
@@ -2261,7 +2300,7 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
         sys.exit(0)
 
 def _get_all_mgmtinterface_keys():
-    """Returns list of strings containing mgmt interface keys 
+    """Returns list of strings containing mgmt interface keys
     """
     config_db = ConfigDBConnector()
     config_db.connect()
@@ -2594,6 +2633,56 @@ def del_vrf(ctx, vrf_name):
         del_interface_bind_to_vrf(config_db, vrf_name)
         config_db.set_entry('VRF', vrf_name, None)
 
+
+@vrf.command('add_vrf_vni_map')
+@click.argument('vrfname', metavar='<vrf-name>', required=True, type=str)
+@click.argument('vni', metavar='<vni>', required=True)
+@click.pass_context
+def add_vrf_vni_map(ctx, vrfname, vni):
+    db = ctx.obj['config_db']
+    found = 0
+    if vrfname not in db.get_table('VRF').keys():
+        ctx.fail("vrf {} doesnt exists".format(vrfname))
+    if not vni.isdigit():
+        ctx.fail("Invalid VNI {}. Only valid VNI is accepted".format(vni))
+
+    if (int(vni) < 1) or (int(vni) > 16777215):
+        ctx.fail("Invalid VNI {}. Valid range [1 to 16777215].".format(vni))
+
+    vxlan_table = db.get_table('VXLAN_TUNNEL_MAP')
+    vxlan_keys = vxlan_table.keys()
+    if vxlan_keys is not None:
+        for key in vxlan_keys:
+            if (vxlan_table[key]['vni'] == vni):
+                found = 1
+                break
+
+    if (found == 0):
+        ctx.fail(" VLAN VNI not mapped. Please create VLAN VNI map entry first ")
+
+    found = 0
+    vrf_table = db.get_table('VRF')
+    vrf_keys = vrf_table.keys()
+    if vrf_keys is not None:
+        for vrf_key in vrf_keys:
+            if ('vni' in vrf_table[vrf_key] and vrf_table[vrf_key]['vni'] == vni):
+                found = 1
+                break
+
+    if (found == 1):
+        ctx.fail("VNI already mapped to vrf {}".format(vrf_key))
+
+    db.mod_entry('VRF', vrfname, {"vni": vni})
+
+@vrf.command('del_vrf_vni_map')
+@click.argument('vrfname', metavar='<vrf-name>', required=True, type=str)
+@click.pass_context
+def del_vrf_vni_map(ctx, vrfname):
+    db = ctx.obj['config_db']
+    if vrfname not in db.get_table('VRF').keys():
+        ctx.fail("vrf {} doesnt exists".format(vrfname))
+
+    db.mod_entry('VRF', vrfname, {"vni": 0})
 
 #
 # 'route' group ('config route ...')
@@ -2985,9 +3074,9 @@ def priority(ctx, interface_name, priority, status):
         interface_name = interface_alias_to_name(interface_name)
         if interface_name is None:
             ctx.fail("'interface_name' is None!")
-    
+
     run_command("pfc config priority {0} {1} {2}".format(status, interface_name, priority))
-    
+
 #
 # 'platform' group ('config platform ...')
 #
@@ -3086,10 +3175,10 @@ def naming_mode_alias():
 def is_loopback_name_valid(loopback_name):
     """Loopback name validation
     """
-    
+
     if loopback_name[:CFG_LOOPBACK_PREFIX_LEN] != CFG_LOOPBACK_PREFIX :
         return False
-    if (loopback_name[CFG_LOOPBACK_PREFIX_LEN:].isdigit() is False or 
+    if (loopback_name[CFG_LOOPBACK_PREFIX_LEN:].isdigit() is False or
           int(loopback_name[CFG_LOOPBACK_PREFIX_LEN:]) > CFG_LOOPBACK_ID_MAX_VAL) :
         return False
     if len(loopback_name) > CFG_LOOPBACK_NAME_TOTAL_LEN_MAX:
@@ -3256,7 +3345,7 @@ def add_ntp_server(ctx, ntp_ip_address):
     if ntp_ip_address in ntp_servers:
         click.echo("NTP server {} is already configured".format(ntp_ip_address))
         return
-    else: 
+    else:
         db.set_entry('NTP_SERVER', ntp_ip_address, {'NULL': 'NULL'})
         click.echo("NTP server {} added to configuration".format(ntp_ip_address))
         try:
@@ -3277,7 +3366,7 @@ def del_ntp_server(ctx, ntp_ip_address):
     if ntp_ip_address in ntp_servers:
         db.set_entry('NTP_SERVER', '{}'.format(ntp_ip_address), None)
         click.echo("NTP server {} removed from configuration".format(ntp_ip_address))
-    else: 
+    else:
         ctx.fail("NTP server {} is not configured.".format(ntp_ip_address))
     try:
         click.echo("Restarting ntp-config service...")
@@ -3565,7 +3654,7 @@ def delete(ctx):
 
 #
 # 'feature' command ('config feature name state')
-# 
+#
 @config.command('feature')
 @click.argument('name', metavar='<feature-name>', required=True)
 @click.argument('state', metavar='<feature-state>', required=True, type=click.Choice(["enabled", "disabled"]))
@@ -3617,5 +3706,317 @@ def autorestart(container_name, autorestart_status):
 
     config_db.mod_entry('CONTAINER_FEATURE', container_name, {'auto_restart': autorestart_status})
 
+#
+# 'vxlan' group ('config vxlan ...')
+#
+@config.group()
+@click.pass_context
+def vxlan(ctx):
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    ctx.obj = {'db': config_db}
+
+@vxlan.command('add')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.argument('src_ip', metavar='<src_ip>', required=True)
+@click.pass_context
+def add_vxlan(ctx, vxlan_name, src_ip):
+    """Add VXLAN"""
+    if not is_ipaddress(src_ip):
+        ctx.fail("{} invalid src ip address".format(src_ip))
+    db = ctx.obj['db']
+
+    vxlan_keys = db.keys('CONFIG_DB', "VXLAN_TUNNEL|*")
+    if not vxlan_keys:
+      vxlan_count = 0
+    else:
+      vxlan_count = len(vxlan_keys)
+
+    if(vxlan_count > 0):
+        ctx.fail("VTEP already configured.")
+
+    fvs = {'src_ip': src_ip}
+    db.set_entry('VXLAN_TUNNEL', vxlan_name, fvs)
+
+@vxlan.command('del')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.pass_context
+def del_vxlan(ctx, vxlan_name):
+    """Del VXLAN"""
+    db = ctx.obj['db']
+
+    vxlan_keys = db.keys('CONFIG_DB', "VXLAN_EVPN_NVO|*")
+    if not vxlan_keys:
+      vxlan_count = 0
+    else:
+      vxlan_count = len(vxlan_keys)
+
+    if(vxlan_count > 0):
+        ctx.fail("Please delete the EVPN NVO configuration.")
+
+    vxlan_keys = db.keys('CONFIG_DB', "VXLAN_TUNNEL_MAP|*")
+    if not vxlan_keys:
+      vxlan_count = 0
+    else:
+      vxlan_count = len(vxlan_keys)
+
+    if(vxlan_count > 0):
+        ctx.fail("Please delete all VLAN VNI mappings.")
+
+    db.set_entry('VXLAN_TUNNEL', vxlan_name, None)
+
+@vxlan.group('evpn_nvo')
+@click.pass_context
+def vxlan_evpn_nvo(ctx):
+    pass
+
+@vxlan_evpn_nvo.command('add')
+@click.argument('nvo_name', metavar='<nvo_name>', required=True)
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.pass_context
+def add_vxlan_evpn_nvo(ctx, nvo_name, vxlan_name):
+    """Add NVO"""
+    db = ctx.obj['db']
+    vxlan_keys = db.keys('CONFIG_DB', "VXLAN_EVPN_NVO|*")
+    if not vxlan_keys:
+      vxlan_count = 0
+    else:
+      vxlan_count = len(vxlan_keys)
+
+    if(vxlan_count > 0):
+        ctx.fail("EVPN NVO already configured")
+
+    if len(db.get_entry('VXLAN_TUNNEL', vxlan_name)) == 0:
+        ctx.fail("VTEP {} not configured".format(vxlan_name))
+
+    fvs = {'source_vtep': vxlan_name}
+    db.set_entry('VXLAN_EVPN_NVO', nvo_name, fvs)
+
+@vxlan_evpn_nvo.command('del')
+@click.argument('nvo_name', metavar='<nvo_name>', required=True)
+@click.pass_context
+def del_vxlan_evpn_nvo(ctx, nvo_name):
+    """Del NVO"""
+    db = ctx.obj['db']
+    vxlan_keys = db.keys('CONFIG_DB', "VXLAN_TUNNEL_MAP|*")
+    if not vxlan_keys:
+      vxlan_count = 0
+    else:
+      vxlan_count = len(vxlan_keys)
+
+    if(vxlan_count > 0):
+        ctx.fail("Please delete all VLAN VNI mappings.")
+    db.set_entry('VXLAN_EVPN_NVO', nvo_name, None)
+
+@vxlan.group('map')
+@click.pass_context
+def vxlan_map(ctx):
+    pass
+
+@vxlan_map.command('add')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.argument('vlan', metavar='<vlan_id>', required=True)
+@click.argument('vni', metavar='<vni>', required=True)
+@click.pass_context
+def add_vxlan_map(ctx, vxlan_name, vlan, vni):
+    """Add VLAN-VNI map entry"""
+    if not vlan.isdigit():
+        ctx.fail("Invalid vlan {}. Only valid vlan is accepted".format(vni))
+    if vlan_id_is_valid(int(vlan)) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if not vni.isdigit():
+        ctx.fail("Invalid VNI {}. Only valid VNI is accepted".format(vni))
+    #if (int(vni) < 1) or (int(vni) > 16777215):
+    if vni_id_is_valid(int(vni)) is False:
+        ctx.fail("Invalid VNI {}. Valid range [1 to 16777215].".format(vni))
+
+    db = ctx.obj['db']
+    vlan_name = "Vlan" + vlan
+
+    if len(db.get_entry('VXLAN_TUNNEL', vxlan_name)) == 0:
+        ctx.fail("VTEP {} not configured".format(vxlan_name))
+
+    if len(db.get_entry('VLAN', vlan_name)) == 0:
+        ctx.fail("{} not configured".format(vlan_name))
+
+    vxlan_table = db.get_table('VXLAN_TUNNEL_MAP')
+    vxlan_keys = vxlan_table.keys()
+    if vxlan_keys is not None:
+      for key in vxlan_keys:
+        if (vxlan_table[key]['vlan'] == vlan_name):
+           ctx.fail(" Vlan Id already mapped ")
+        if (vxlan_table[key]['vni'] == vni):
+           ctx.fail(" VNI Id already mapped ")
+
+    fvs = {'vni': vni,
+           'vlan' : vlan_name}
+    mapname = vxlan_name + '|' + 'map_' + vni + '_' + vlan_name
+    db.set_entry('VXLAN_TUNNEL_MAP', mapname, fvs)
+
+@vxlan_map.command('del')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.argument('vlan', metavar='<vlan_id>', required=True)
+@click.argument('vni', metavar='<vni>', required=True)
+@click.pass_context
+def del_vxlan_map(ctx, vxlan_name, vlan, vni):
+    """Del VLAN-VNI map entry"""
+    if not vlan.isdigit():
+        ctx.fail("Invalid vlan {}. Only valid vlan is accepted".format(vni))
+    if vlan_id_is_valid(int(vlan)) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if not vni.isdigit():
+        ctx.fail("Invalid VNI {}. Only valid VNI is accepted".format(vni))
+    #if (int(vni) < 1) or (int(vni) > 16777215):
+    if vni_id_is_valid(int(vni)) is False:
+        ctx.fail("Invalid VNI {}. Valid range [1 to 16777215].".format(vni))
+
+    db = ctx.obj['db']
+    if len(db.get_entry('VXLAN_TUNNEL', vxlan_name)) == 0:
+        ctx.fail("VTEP {} not configured".format(vxlan_name))
+    found = 0
+    vrf_table = db.get_table('VRF')
+    vrf_keys = vrf_table.keys()
+    if vrf_keys is not None:
+      for vrf_key in vrf_keys:
+        if ('vni' in vrf_table[vrf_key] and vrf_table[vrf_key]['vni'] == vni):
+           found = 1
+           break
+
+    if (found == 1):
+        ctx.fail("VNI mapped to vrf {}, Please remove VRF VNI mapping".format(vrf_key))
+
+    mapname = vxlan_name + '|' + 'map_' + vni + '_' + vlan
+    db.set_entry('VXLAN_TUNNEL_MAP', mapname, None)
+    mapname = vxlan_name + '|' + 'map_' + vni + '_Vlan' + vlan
+    db.set_entry('VXLAN_TUNNEL_MAP', mapname, None)
+
+@vxlan.group('map_range')
+@click.pass_context
+def vxlan_map_range(ctx):
+    pass
+
+@vxlan_map_range.command('add')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.argument('vlan_start', metavar='<vlan_start>', required=True, type=int)
+@click.argument('vlan_end', metavar='<vlan_end>', required=True, type=int)
+@click.argument('vni_start', metavar='<vni_start>', required=True, type=int)
+@click.pass_context
+def add_vxlan_map_range(ctx, vxlan_name, vlan_start, vlan_end, vni_start):
+    """Add Range of vlan-vni mappings"""
+    if vlan_id_is_valid(vlan_start) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if vlan_id_is_valid(vlan_end) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if (vlan_start > vlan_end):
+       ctx.fail("vlan_end should be greater or equal to vlan_start")
+    if vni_id_is_valid(vni_start) is False:
+        ctx.fail("Invalid VNI {}. Valid range [1 to 16777215].".format(vni_start))
+    if vni_id_is_valid(vni_start+vlan_end-vlan_start) is False:
+        ctx.fail("Invalid VNI End {}. Valid range [1 to 16777215].".format(vni_start))
+
+    db = ctx.obj['db']
+    if len(db.get_entry('VXLAN_TUNNEL', vxlan_name)) == 0:
+        ctx.fail("VTEP {} not configured".format(vxlan_name))
+    vlan_end = vlan_end + 1
+    vxlan_table = db.get_table('VXLAN_TUNNEL_MAP')
+    vxlan_keys = vxlan_table.keys()
+
+    for vid in range (vlan_start, vlan_end):
+       vlan_name = 'Vlan{}'.format(vid)
+       vnid = vni_start+vid-vlan_start
+       vni_name = '{}'.format(vnid)
+       match_found = 'no'
+       if len(db.get_entry('VLAN', vlan_name)) == 0:
+         click.echo("{} not configured".format(vlan_name))
+         continue
+       if vxlan_keys is not None:
+          for key in vxlan_keys:
+            if (vxlan_table[key]['vlan'] == vlan_name):
+              print(vlan_name + " already mapped")
+              match_found = 'yes'
+              break
+            if (vxlan_table[key]['vni'] == vni_name):
+              print("VNI:" + vni_name + " already mapped ")
+              match_found = 'yes'
+              break
+       if (match_found == 'yes'):
+         continue
+       fvs = {'vni': vni_name,
+              'vlan' : vlan_name}
+       mapname = vxlan_name + '|' + 'map_' + vni_name + '_' + vlan_name
+       db.set_entry('VXLAN_TUNNEL_MAP', mapname, fvs)
+
+@vxlan_map_range.command('del')
+@click.argument('vxlan_name', metavar='<vxlan_name>', required=True)
+@click.argument('vlan_start', metavar='<vlan_start>', required=True, type=int)
+@click.argument('vlan_end', metavar='<vlan_end>', required=True, type=int)
+@click.argument('vni_start', metavar='<vni_start>', required=True, type=int)
+@click.pass_context
+def del_vxlan_map_range(ctx, vxlan_name, vlan_start, vlan_end, vni_start):
+    """Del Range of vlan-vni mappings"""
+    if vlan_id_is_valid(vlan_start) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if vlan_id_is_valid(vlan_end) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    if (vlan_start > vlan_end):
+       ctx.fail("vlan_end should be greater or equal to vlan_start")
+    if vni_id_is_valid(vni_start) is False:
+        ctx.fail("Invalid VNI {}. Valid range [1 to 16777215].".format(vni_start))
+    if vni_id_is_valid(vni_start+vlan_end-vlan_start) is False:
+        ctx.fail("Invalid VNI End {}. Valid range [1 to 16777215].".format(vni_start))
+
+    db = ctx.obj['db']
+    if len(db.get_entry('VXLAN_TUNNEL', vxlan_name)) == 0:
+        ctx.fail("VTEP {} not configured".format(vxlan_name))
+
+    vlan_end = vlan_end + 1
+    for vid in range (vlan_start, vlan_end):
+       vlan_name = 'Vlan{}'.format(vid)
+       vnid = vni_start+vid-vlan_start
+       vni_name = '{}'.format(vnid)
+       if is_vni_vrf_mapped(ctx, vni_name) is False:
+           print "Skipping Vlan {} VNI {} mapped delete. ".format(vlan_name, vni_name)
+           continue
+
+       mapname = vxlan_name + '|' + 'map_' + vni_name + '_' + vlan_name
+       db.set_entry('VXLAN_TUNNEL_MAP', mapname, None)
+
+#######
+#
+# 'neigh_suppress' group ('config neigh_suppress...')
+#
+@config.group()
+@click.pass_context
+def neigh_suppress(ctx):
+    """ Neighbour Suppress VLAN-related configuration """
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    ctx.obj = {'db': config_db}
+
+@neigh_suppress.command('enable')
+@click.argument('vid', metavar='<vid>', required=True, type=int)
+@click.pass_context
+def enable_neigh_suppress(ctx, vid):
+    db = ctx.obj['db']
+    if vlan_id_is_valid(vid) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    vlan = 'Vlan{}'.format(vid)
+    if len(db.get_entry('VLAN', vlan)) == 0:
+        click.echo("{} doesn't exist".format(vlan))
+        return
+    fvs = {'suppress': "on"}
+    db.set_entry('SUPPRESS_VLAN_NEIGH', vlan, fvs)
+
+@neigh_suppress.command('disable')
+@click.argument('vid', metavar='<vid>', required=True, type=int)
+@click.pass_context
+def disable_neigh_suppress(ctx, vid):
+    db = ctx.obj['db']
+    if vlan_id_is_valid(vid) is False:
+        ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
+    vlan = 'Vlan{}'.format(vid)
+    db.set_entry('SUPPRESS_VLAN_NEIGH', vlan, None)
+
 if __name__ == '__main__':
     config()
+
