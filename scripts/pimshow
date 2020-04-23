@@ -1,0 +1,83 @@
+#! /usr/bin/python
+
+import argparse
+import sys
+import os
+from swsssdk import SonicV2Connector
+from tabulate import tabulate
+
+# mock the redis for unit test purposes #
+try:
+    if os.environ["UTILITIES_UNIT_TESTING"] == "1":
+        modules_path = os.path.join(os.path.dirname(__file__), "..")
+        test_path = os.path.join(modules_path, "sonic-utilities-tests")
+        sys.path.insert(0, modules_path)
+        sys.path.insert(0, test_path)
+        import mock_tables.dbconnector
+except KeyError:
+    pass
+
+def pim_status_show(index):
+    db = SonicV2Connector(host="127.0.0.1")
+    db.connect(db.STATE_DB)
+
+    keys = db.keys(db.STATE_DB, 'PIM_TABLE|*')
+    if not keys:
+        print "Error! Failed to get the pim table!"
+        return -1
+
+    if index < 0:
+        keys.sort()
+        pim_ids = keys
+    else:
+        pim_ids = ["PIM_TABLE|slot {}".format(index)]
+
+    header = ['Slot Index', 'Operation Status', 'Type', 'HW Status']
+    status_table = []
+
+    for key in pim_ids:
+
+        slot_id = key.split('|')[1]
+        oper_status = db.get(db.STATE_DB, key, 'oper_status')
+
+        pim_type = db.get(db.STATE_DB, key, 'pim_type')
+        if pim_type is None:
+            pim_type = 'none'
+
+        #TODO: 'pim_err_status' shall be renamed as 'hw_status' because the content is a bit-map
+        #      flag that represents different hardware statuses including hardware error status.
+        pim_err_status = db.get(db.STATE_DB, key, 'pim_err_status')
+        if pim_err_status is None:
+            pim_err_status = 'none'
+        hw_status_msg = "status code: {}".format(pim_err_status)
+
+        status_table.append([slot_id, oper_status, pim_type, hw_status_msg])
+
+    if status_table:
+        print tabulate(status_table, header, tablefmt="simple")
+    return 0
+
+def main():
+    parser = argparse.ArgumentParser(description='Display the psu status information',
+                                     version='1.0.0',
+                                     formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog="""
+Examples:
+  pimshow -s -i 1
+""")
+
+    parser.add_argument('-s', '--status', action='store_true', help='show the status information')
+    parser.add_argument('-i', '--index', type=int, default=-1, help='the index of pim')
+    args = parser.parse_args()
+
+    status_show = args.status
+    pim_index = args.index
+    if status_show:
+        err = pim_status_show(pim_index)
+        if err:
+            print "Error: fail to get pim status from state DB"
+            sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+

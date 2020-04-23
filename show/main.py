@@ -3419,5 +3419,24 @@ def tunnel():
 
     click.echo(tabulate(table, header))
 
+# 'pim' command ("show pim")
+#
+@cli.group(cls=AliasedGroup, default_if_no_args=False)
+def pim():
+    """Show details of the pims"""
+    pass
+
+@pim.command()
+@click.option('-i', '--slot-index', default=-1, type=int, help="the slot index")
+@click.option('--verbose', is_flag=True, help="Enable verbose output")
+def status(slot_index, verbose):
+    """Show pim status"""
+    cmd = "pimshow -s"
+
+    if slot_index >= 0:
+        cmd += " -i {}".format(slot_index)
+
+    run_command(cmd, display_cmd=verbose)
+
 if __name__ == '__main__':
     cli()

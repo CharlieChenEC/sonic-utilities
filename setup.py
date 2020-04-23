@@ -107,7 +107,8 @@ setup(
         'scripts/warm-reboot',
         'scripts/watermarkstat',
         'scripts/watermarkcfg',
-        'scripts/sonic-kdump-config'
+        'scripts/sonic-kdump-config',
+        'scripts/pimshow'
     ],
     data_files=[
         ('/etc/bash_completion.d', glob.glob('data/etc/bash_completion.d/*')),
