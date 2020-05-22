@@ -108,7 +108,8 @@ setup(
         'scripts/watermarkstat',
         'scripts/watermarkcfg',
         'scripts/sonic-kdump-config',
-        'scripts/pimshow'
+        'scripts/pimshow',
+        'scripts/image_to_db'
     ],
     data_files=[
         ('/etc/bash_completion.d', glob.glob('data/etc/bash_completion.d/*')),

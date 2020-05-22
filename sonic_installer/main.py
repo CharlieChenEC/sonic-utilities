@@ -40,6 +40,26 @@ def reporthook(count, block_size, total_size):
                                   (percent, progress_size / (1024 * 1024), speed, time_left))
     sys.stdout.flush()
 
+def save_to_db():
+    """ Set installed images to redis db """
+    state_db = ConfigDBConnector()
+    state_db.db_connect('STATE_DB')
+
+    state_db.delete_table('IMAGE_GLOBAL')
+    state_db.delete_table('IMAGE_TABLE')
+
+    images = get_installed_images()
+    curimage = get_current_image()
+    nextimage = get_next_image()
+
+    state_db.mod_entry('IMAGE_GLOBAL', 'state', {"current": curimage})
+    state_db.mod_entry('IMAGE_GLOBAL', 'state', {"next-boot": nextimage})
+
+    for image in get_installed_images():
+        state_db.set_entry('IMAGE_TABLE', image, {"NULL": "NULL"})
+
+    state_db.close(state_db.STATE_DB)
+
 # TODO: Embed tag name info into docker image meta data at build time,
 # and extract tag name from docker image file.
 def get_docker_tag_name(image):
@@ -189,6 +209,7 @@ def install(url, force, skip_migration=False):
     # Finally, sync filesystem
     run_command("sync;sync;sync")
     run_command("sleep 3") # wait 3 seconds after sync
+    save_to_db()
     click.echo('Done')
 
 
@@ -216,6 +237,7 @@ def set_default(image):
         click.echo('Error: Image does not exist')
         raise click.Abort()
     bootloader.set_default_image(image)
+    save_to_db()
 
 # Set image for next boot
 @cli.command('set_next_boot')
@@ -227,6 +249,7 @@ def set_next_boot(image):
         click.echo('Error: Image does not exist')
         sys.exit(1)
     bootloader.set_next_image(image)
+    save_to_db()
 
 # Uninstall image
 @cli.command()
@@ -246,6 +269,7 @@ def remove(image):
         sys.exit(1)
     # TODO: check if image is next boot or default boot and fix these
     bootloader.remove_image(image)
+    save_to_db()
 
 # Retrieve version from binary image file and print to screen
 @cli.command('binary_version')
@@ -279,6 +303,8 @@ def cleanup():
 
     if image_removed == 0:
         click.echo("No image(s) to remove")
+    else:
+        save_to_db()
 
 # Upgrade docker image
 @cli.command('upgrade_docker')

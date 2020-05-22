@@ -1,0 +1,48 @@
+#! /usr/bin/python
+
+import argparse
+import sys
+import os
+import subprocess
+from swsssdk import ConfigDBConnector
+
+
+# mock the redis for unit test purposes #
+try:
+    if os.environ["UTILITIES_UNIT_TESTING"] == "1":
+        modules_path = os.path.join(os.path.dirname(__file__), "..")
+        test_path = os.path.join(modules_path, "sonic-utilities-tests")
+        sys.path.insert(0, modules_path)
+        sys.path.insert(0, test_path)
+        import mock_tables.dbconnector
+except KeyError:
+    pass
+
+
+def main():
+    db = ConfigDBConnector()
+    db.db_connect('STATE_DB')
+
+    db.delete_table('IMAGE_GLOBAL')
+    db.delete_table('IMAGE_TABLE')
+
+    available = False
+    for line in subprocess.check_output(['bash', '-c', "sonic_installer list"]).rstrip().split('\n'):
+
+        if available == True:
+            db.set_entry('IMAGE_TABLE', line, {"NULL": "NULL"})
+        else:
+            item = line.split()[0]
+            if item == "Current:":
+                image_name = line.split()[1]
+                db.mod_entry('IMAGE_GLOBAL', 'state', {"current": image_name})
+            elif item == "Next:":
+                image_name = line.split()[1]
+                db.mod_entry('IMAGE_GLOBAL', 'state', {"next-boot": image_name})
+            elif item == "Available:":
+                available = True
+
+    db.close(db.STATE_DB)
+
+if __name__ == '__main__':
+    main()
