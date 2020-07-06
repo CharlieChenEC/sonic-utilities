@@ -2558,7 +2558,8 @@ def add(ctx, interface_name, ip_addr, gw):
             ctx.fail("'interface_name' is not valid. Valid names [Ethernet/PortChannel/Vlan/Loopback]")
         if not interface_name.startswith("Loopback") and ip_network.prefixlen == ip_network.max_prefixlen:
             ctx.fail("Bad mask /{} for IP address {}".format(ip_network.max_prefixlen, ip_addr))
-        if is_ipaddress_overlapped(interface_name, ip_addr):
+
+        if not ip_network.is_link_local and is_ipaddress_overlapped(interface_name, ip_addr):
             ctx.fail("IP address {} overlaps with existing subnet".format(ip_addr))
         interface_entry = config_db.get_entry(table_name, interface_name)
         if len(interface_entry) == 0:
