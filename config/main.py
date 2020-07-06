@@ -144,8 +144,16 @@ def execute_systemctl(list_of_services, action):
                     click.echo("Executing {} of service {}@{}...".format(action, service, inst))
                     run_command("systemctl {} {}@{}.service".format(action, service, inst))
                 except SystemExit as e:
-                    log_error("Failed to execute {} of service {}@{} with error {}".format(action, service, inst, e))
-                    raise
+                    if action == SYSTEMCTL_ACTION_STOP:
+                        log_warning("Received error {} when stopping service '{}'. Waiting to see if it stops ...".format(e, service))
+                        if _wait_for_service_stop(service):
+                            log_info("{} is stopped".format(service))
+                        else:
+                            log_error("Failed to execute {} of service {} with error {}".format(action, service, e))
+                            raise
+                    else:
+                        log_error("Failed to execute {} of service {} with error {}".format(action, service, e))
+                        raise
 
 def run_command(command, display_cmd=False, ignore_error=False):
     """Run bash command and print output to stdout
@@ -161,6 +169,8 @@ def run_command(command, display_cmd=False, ignore_error=False):
 
     if proc.returncode != 0 and not ignore_error:
         sys.exit(proc.returncode)
+    else:
+        return (out, err)
 
 # Validate whether a given namespace name is valid in the device.
 def validate_namespace(namespace):
@@ -491,6 +501,19 @@ def _get_sonic_generated_services(num_asic):
             else:
                 generated_services_list.append(line.rstrip('\n'))
     return generated_services_list, generated_multi_instance_services
+
+def _wait_for_service_stop(service_name):
+    # Check the service for 60 times with 1s interval
+    for i in range(60):
+        (srv_active, err) = run_command("systemctl is-active {}".format(service_name))
+        if "inactive" in srv_active:
+            return True
+        time.sleep(1)
+
+    (srv_status, err) = run_command("systemctl status {}".format(service_name))
+    log_error("Wait {} to stop overtime, error: {}".format(service_name, err))
+    log_error(srv_status)
+    return False
 
 # Callback for confirmation prompt. Aborts if user enters "n"
 def _abort_if_false(ctx, param, value):
