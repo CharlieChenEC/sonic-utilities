@@ -37,6 +37,8 @@ Ethernet200  Not present
         result = runner.invoke(show.cli.commands["interfaces"].commands["transceiver"].commands["eeprom"], ["Ethernet0 -d"])
         expected = """Ethernet0: SFP EEPROM detected
         Connector: No separable connector
+        DOM Capability: 
+                sff8472_dom_support: no
         Encoding: 64B66B
         Extended Identifier: Power Class 3(2.5W max), CDR present in Rx Tx
         Extended RateSelect Compliance: QSFP+ Rate Select Version 1
@@ -90,6 +92,8 @@ Ethernet200  Not present
         result = runner.invoke(show.cli.commands["interfaces"].commands["transceiver"].commands["eeprom"], ["Ethernet0"])
         expected = """Ethernet0: SFP EEPROM detected
         Connector: No separable connector
+        DOM Capability: 
+                sff8472_dom_support: no
         Encoding: 64B66B
         Extended Identifier: Power Class 3(2.5W max), CDR present in Rx Tx
         Extended RateSelect Compliance: QSFP+ Rate Select Version 1

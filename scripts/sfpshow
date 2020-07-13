@@ -38,7 +38,8 @@ qsfp_data_map = {'model': 'Vendor PN',
                  'nominal_bit_rate': 'Nominal Bit Rate(100Mbs)',
                  'specification_compliance': 'Specification compliance',
                  'encoding': 'Encoding',
-                 'connector': 'Connector'
+                 'connector': 'Connector',
+                 'dom_capability': 'DOM Capability'
                  }
 
 sfp_dom_channel_monitor_map = {'rx1power': 'RXPower',
@@ -266,6 +267,12 @@ class SFPShow(object):
                 out_put = out_put + ident + qsfp_data_map['specification_compliance'] + ': ' + '\n'
                 for compliance_key in sorted_compliance_key_table:
                     out_put = out_put + ident + ident + compliance_key + ': ' + spefic_compliance_dict[compliance_key] + '\n'
+            elif key1 == 'dom_capability':
+                dom_capability_dict = eval(sfp_info_dict['dom_capability'])
+                sorted_dom_capability_key_table = natsorted(dom_capability_dict)
+                out_put = out_put + ident + qsfp_data_map['dom_capability'] + ': ' + '\n'
+                for dom_capability_key in sorted_dom_capability_key_table:
+                    out_put = out_put + ident + ident + dom_capability_key + ': ' + dom_capability_dict[dom_capability_key] + '\n'
             else:
                 out_put = out_put + ident + qsfp_data_map[key1] + ': ' + sfp_info_dict[key1] + '\n'
 
@@ -277,7 +284,7 @@ class SFPShow(object):
         sfp_info_dict = state_db.get_all(state_db.STATE_DB, 'TRANSCEIVER_INFO|{}'.format(interface_name))
         out_put = interface_name + ': ' + 'SFP EEPROM detected' + '\n'
         sfp_info_output = self.convert_sfp_info_to_output_string(sfp_info_dict)
-        out_put = out_put + sfp_info_output
+        out_put = out_put + sfp_info_output.decode('utf-8', errors='ignore')
 
         if dump_dom:
             sfp_type = sfp_info_dict['type']
