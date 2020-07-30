@@ -9,6 +9,7 @@ import re
 import syslog
 import time
 import netifaces
+import json
 
 import sonic_device_util
 import ipaddress
