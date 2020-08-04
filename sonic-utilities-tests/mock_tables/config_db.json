@@ -173,6 +173,20 @@
         "type": "PORT_INGRESS_DROPS",
         "desc": ""
     },
+    "SAG_GLOBAL|IP": {
+        "gwmac": "00-05-5D-E8-0F-A3",
+        "IPv4": "enable",
+        "IPv6": "disable"
+    },
+    "VLAN|Vlan1000": {
+        "vlanid": "1000"
+    },
+    "SAG|Vlan1000|IPv4": {
+        "gwip@": "192.168.0.1/24,192.168.0.2/24"
+    },
+    "SAG|Vlan1000|IPv6": {
+        "gwip@": "2001:648:2000::/128"
+    },
     "DEBUG_COUNTER_DROP_REASON|DEBUG_0|IP_HEADER_ERROR": {},
     "DEBUG_COUNTER_DROP_REASON|DEBUG_1|ACL_ANY": {},
     "DEBUG_COUNTER_DROP_REASON|DEBUG_2|IP_HEADER_ERROR": {},

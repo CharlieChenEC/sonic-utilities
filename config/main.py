@@ -612,6 +612,33 @@ def _is_neighbor_ipaddress(config_db, ipaddress):
     entry = config_db.get_entry('BGP_NEIGHBOR', ipaddress)
     return True if entry else False
 
+def set_sag_interface(ctx, db, addr_type, vlan_id, ip_addr) :
+    separator = ','
+    if len(db.get_entry('SAG', (vlan_id, addr_type))) ==  0:
+        db.mod_entry('SAG', (vlan_id, addr_type),{'gwip@': ip_addr})
+    else :
+        origin_list = db.get_entry('SAG', (vlan_id, addr_type))['gwip']
+        add_list = origin_list + [ip_addr.encode('ascii', 'ignore')]
+        add_list = list(set(add_list))
+        add_list.sort()
+        if len(add_list) > 16 :
+            ctx.fail("Exceeds the maximum ip address size of 16")
+        db.mod_entry('SAG', (vlan_id, addr_type),{'gwip': add_list})
+
+
+def delete_sag_interface(ctx, db, addr_type, vlan_id, ip_addr) :
+    separator = ','
+    if len(db.get_entry('SAG', (vlan_id, addr_type))) == 0 :
+        pass
+    elif len(db.get_entry('SAG', (vlan_id, addr_type))['gwip']) == 1 :
+        if ip_addr == separator.join(db.get_entry('SAG', (vlan_id, addr_type))['gwip']) :
+            db.set_entry('SAG', (vlan_id, addr_type),None)
+    else :
+        ip_list = db.get_entry('SAG', (vlan_id, addr_type))['gwip']
+        if ip_addr in ip_list:
+            ip_list.remove(ip_addr)
+        db.mod_entry('SAG', (vlan_id, addr_type),{'gwip': ip_list})
+
 def _get_all_neighbor_ipaddresses(config_db, ignore_local_hosts=False):
     """Returns list of strings containing IP addresses of all BGP neighbors
        if the flag ignore_local_hosts is set to True, additional check to see if
@@ -1300,6 +1327,76 @@ def del_portchannel_member(ctx, portchannel_name, port_name):
     db.set_entry('PORTCHANNEL_MEMBER', (portchannel_name, port_name), None)
     db.set_entry('PORTCHANNEL_MEMBER', portchannel_name + '|' + port_name, None)
 
+#
+# 'sag'group ('config sag ...')
+#
+@config.group()
+@click.pass_context
+def sag(ctx):
+    """Static Anycast Gateway"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    ctx.obj = {'db': config_db}
+    pass
+
+@sag.group('mac_address')
+@click.pass_context
+def sag_mac_address(ctx):
+    pass
+
+@sag_mac_address.command('add')
+@click.argument('mac_address', metavar='<mac_address>', required=True)
+@click.pass_context
+def add_sag_mac_address(ctx, mac_address):
+    """Add mac address to sag"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', {'gwmac': mac_address})
+
+@sag_mac_address.command('del')
+@click.argument('mac_address', metavar='<mac_address>', required=True)
+@click.pass_context
+def del_sag_mac_address(ctx, mac_address):
+    """Delete mac address from sag"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', None)
+
+@sag.group('ipv4')
+@click.pass_context
+def sag_ipv4_knob(ctx):
+    pass
+
+@sag_ipv4_knob.command('enable')
+@click.pass_context
+def enable_sag_ipv4_knob(ctx):
+    """ipv4 enable knob"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', {'IPv4': 'enable'})
+
+@sag_ipv4_knob.command('disable')
+@click.pass_context
+def disable_sag_ipv4_knob(ctx):
+    """ipv4 disable knob"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', {'IPv4': 'disable'})
+
+@sag.group('ipv6')
+@click.pass_context
+def sag_ipv6_knob(ctx):
+    pass
+
+@sag_ipv6_knob.command('enable')
+@click.pass_context
+def enable_sag_ipv6_knob(ctx):
+    """ipv4 enable knob"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', {'IPv6': 'enable'})
+
+@sag_ipv6_knob.command('disable')
+@click.pass_context
+def disable_sag_ipv6_knob(ctx):
+    """ipv4 disable knob"""
+    db = ctx.obj['db']
+    db.mod_entry('SAG_GLOBAL', 'IP', {'IPv6': 'disable'})
 
 #
 # 'mirror_session' group ('config mirror_session ...')
@@ -2628,6 +2725,60 @@ def unbind(ctx, interface_name):
     for interface_del in interface_dependent:
         config_db.set_entry(table_name, interface_del, None)
     config_db.set_entry(table_name, interface_name, None)
+
+#
+# 'sag' subgroup ('config interface sag ...')
+#
+
+@interface.group()
+@click.pass_context
+def sag(ctx):
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    state_db = SonicV2Connector(host='127.0.0.1')
+    state_db.connect(state_db.STATE_DB, False)
+    ctx.obj = {'config_db': config_db,'state_db':state_db}
+    pass
+
+@sag.group()
+@click.pass_context
+def ip(ctx):
+    pass
+
+@ip.command('add')
+@click.argument('vlan_id', metavar='<vlan_id>', required=True)
+@click.argument('ip_addr', metavar='<ip_addr>', required=True)
+@click.pass_context
+def add(ctx, vlan_id, ip_addr) :
+    ver = ipaddress.ip_interface(ip_addr).ip.version
+    config_db = ctx.obj['config_db']
+    state_db = ctx.obj['state_db']
+    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_id)) != None :
+        if ver == 4 :
+            #ipv4
+            set_sag_interface(ctx, config_db,'IPv4', vlan_id, ip_addr)
+        else :
+            #ipv6
+            set_sag_interface(ctx, config_db,'IPv6', vlan_id, ip_addr)
+    else: ctx.fail("'{}' is not existed ".format(vlan_id))
+
+
+@ip.command('del')
+@click.argument('vlan_id', metavar='<vlan_id>', required=True)
+@click.argument('ip_addr', metavar='<ip_addr>', required=True)
+@click.pass_context
+def delete(ctx, vlan_id, ip_addr) :
+    ver = ipaddress.ip_interface(ip_addr).ip.version
+    config_db = ctx.obj['config_db']
+    state_db = ctx.obj['state_db']
+    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_id)) != None :
+        if ver == 4 :
+            #ipv4
+            delete_sag_interface(ctx, config_db,'IPv4', vlan_id, ip_addr)
+        else :
+            #ipv6
+            delete_sag_interface(ctx, config_db,'IPv6', vlan_id, ip_addr)
+    else: ctx.fail("'{}' is not existed ".format(vlan_id))
 
 
 #

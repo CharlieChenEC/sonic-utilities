@@ -1435,6 +1435,8 @@ def route_map(route_map_name, verbose):
     cmd += '"'
     run_command(cmd, display_cmd=verbose)
 
+
+
 #
 # 'ip' group ("show ip ...")
 #
@@ -2194,6 +2196,63 @@ def ntp(ctx, verbose):
 
     run_command(ntpstat_cmd, display_cmd=verbose)
     run_command(ntpcmd, display_cmd=verbose)
+
+#
+# ' sag' command ("show sag")
+#
+
+@cli.group('sag', invoke_without_command=True)
+@click.pass_context
+def sag(ctx) :
+    """show sag information"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    if ctx.invoked_subcommand is None :
+        header = ['gwmac', 'IPv4', 'IPv6' ]
+        body = [['N/A','N/A','N/A']]
+        sag_data_entry = config_db.get_entry('SAG_GLOBAL','IP')
+        for idx, key in enumerate(header):
+            if key in sag_data_entry :
+                body[0][idx] = sag_data_entry [key]
+
+        click.echo("Static Anycast Gateway Information\n")
+        output_header = ['MacAddress', 'IPv4', 'IPv6' ]
+        click.echo(tabulate(body, output_header, tablefmt="simple", stralign='left', missingval=""))
+
+
+@sag.command('ip')
+def ip():
+    """show sag ip config"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    header = ['Vlan Interface Name','IPv4 address/mask']
+    body = []
+    vlan_data = config_db.get_table('VLAN')
+    for key in natsorted(vlan_data.keys()) :
+        sag_ipv4_config_entry = config_db.get_entry('SAG',(key,'IPv4'))
+        ip_address = sag_ipv4_config_entry.get('gwip')
+        if ip_address != None :
+            body.append([key,ip_address[0]])
+            for each in ip_address[1:]:
+                body.append(['',each])
+    click.echo(tabulate(body, header, tablefmt="simple", stralign='left', missingval=""))
+
+@sag.command('ipv6')
+def ipv6():
+    """show sag ipv6 config"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    header = ['Vlan Interface Name','IPv6 address/mask']
+    body = []
+    vlan_data = config_db.get_table('VLAN')
+    for key in natsorted(vlan_data.keys()) :
+        sag_ipv6_config_entry = config_db.get_entry('SAG',(key,'IPv6'))
+        ip_address = sag_ipv6_config_entry.get('gwip')
+        if ip_address != None :
+            body.append([key,ip_address[0]])
+            for each in ip_address[1:]:
+                body.append(['',each])
+    click.echo(tabulate(body, header, tablefmt="simple", stralign='left', missingval=""))
 
 #
 # 'uptime' command ("show uptime")
