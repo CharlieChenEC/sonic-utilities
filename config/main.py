@@ -2161,8 +2161,14 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
 
     target_brkout_mode = mode
 
-    # Get current breakout mode
+    # Check if interface is parent port.
     cur_brkout_dict = config_db.get_table('BREAKOUT_CFG')
+
+    if interface_name not in cur_brkout_dict.keys():
+        click.secho("[ERROR] {} is not a Parent port. So, Breakout Mode is not available on this port".format(interface_name), fg='red')
+        return click.Abort()
+
+    # Get current breakout mode
     cur_brkout_mode = cur_brkout_dict[interface_name]["brkout_mode"]
 
     # Validate Interface and Breakout mode
