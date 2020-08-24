@@ -481,7 +481,10 @@ def presence(port):
             if presence:
                 output_table.append([port_name, "Present"])
             else:
-                output_table.append([port_name, "Not present"])
+                if not platform_sfputil._is_valid_port(physical_port):
+                    output_table.append([port_name, "N/A"])
+                else:
+                    output_table.append([port_name, "Not present"])
 
             i += 1
 
