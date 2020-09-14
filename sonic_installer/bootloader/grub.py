@@ -65,7 +65,7 @@ class GrubBootloader(OnieInstallerBootloader):
         click.echo('Updating GRUB...')
         config = open(HOST_PATH + '/grub/grub.cfg', 'r')
         old_config = config.read()
-        menuentry = re.search("menuentry '" + image + "[^}]*}", old_config).group()
+        menuentry = re.search("menuentry '" + image + "'[^}]*}", old_config).group()
         config.close()
         config = open(HOST_PATH + '/grub/grub.cfg', 'w')
         # remove menuentry of the image in grub.cfg
