@@ -3421,7 +3421,7 @@ def tunnel():
 
 # 'pim' command ("show pim")
 #
-@cli.group(cls=AliasedGroup, default_if_no_args=False)
+@cli.group(cls=AliasedGroup)
 def pim():
     """Show details of the pims"""
     pass
