@@ -2696,7 +2696,7 @@ def bind(ctx, interface_name, vrf_name):
     state_db = SonicV2Connector(host='127.0.0.1')
     state_db.connect(state_db.STATE_DB, False)
     _hash = '{}{}'.format('INTERFACE_TABLE|', interface_name)
-    while state_db.get(state_db.STATE_DB, _hash, "state") == "ok":
+    while state_db.get_all(state_db.STATE_DB, _hash) != None:
         time.sleep(0.01)
     state_db.close(state_db.STATE_DB)
     config_db.set_entry(table_name, interface_name, {"vrf_name": vrf_name})
