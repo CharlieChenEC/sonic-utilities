@@ -7,6 +7,7 @@ import click
 import urllib
 import syslog
 import subprocess
+from swsssdk import ConfigDBConnector
 from swsssdk import SonicV2Connector
 
 from .bootloader import get_bootloader
@@ -48,14 +49,16 @@ def save_to_db():
     state_db.delete_table('IMAGE_GLOBAL')
     state_db.delete_table('IMAGE_TABLE')
 
-    images = get_installed_images()
-    curimage = get_current_image()
-    nextimage = get_next_image()
+    bootloader = get_bootloader()
+
+    images = bootloader.get_installed_images()
+    curimage = bootloader.get_current_image()
+    nextimage = bootloader.get_next_image()
 
     state_db.mod_entry('IMAGE_GLOBAL', 'state', {"current": curimage})
     state_db.mod_entry('IMAGE_GLOBAL', 'state', {"next-boot": nextimage})
 
-    for image in get_installed_images():
+    for image in bootloader.get_installed_images():
         state_db.set_entry('IMAGE_TABLE', image, {"NULL": "NULL"})
 
     state_db.close(state_db.STATE_DB)
