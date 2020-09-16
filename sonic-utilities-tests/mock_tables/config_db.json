@@ -51,6 +51,32 @@
         "mtu": "9100",
         "speed": "40000"
     },
+    "PORT|Ethernet120": {
+        "admin_status": "up",
+        "alias": "etp31",
+        "lanes": "120,121,122,123",
+        "mtu": "9100",
+        "speed": "40000"
+    },
+    "PORT|Ethernet124": {
+        "admin_status": "up",
+        "alias": "etp32",
+        "lanes": "124,125,126,127",
+        "mtu": "9100",
+        "speed": "40000"
+    },
+    "PORTCHANNEL|PortChannel100": {
+        "admin_status": "up",
+        "mtu": "9100",
+        "members@": "Ethernet120",
+        "min_links": 1
+    },
+    "PORTCHANNEL|PortChannel101": {
+        "admin_status": "up",
+        "mtu": "9100",
+        "members@": "Ethernet124",
+        "min_links": 1
+    },
     "VLAN_SUB_INTERFACE|Ethernet0.10": {
         "admin_status": "up"
     },

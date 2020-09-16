@@ -434,6 +434,11 @@ def is_vni_vrf_mapped(ctx, vni):
 
     if (found == 1):
         print "VNI {} mapped to Vrf {}, Please remove VRF VNI mapping".format(vni, vrf_key)
+def mclag_domain_id_is_valid(domain_id):
+    """Check if the MCLAG domain id is in acceptable range (between 1 and 4095)
+    """
+
+    if domain_id not in range(1,4095):
         return False
 
     return True
@@ -4016,6 +4021,149 @@ def disable_neigh_suppress(ctx, vid):
         ctx.fail(" Invalid Vlan Id , Valid Range : 1 to 4094 ")
     vlan = 'Vlan{}'.format(vid)
     db.set_entry('SUPPRESS_VLAN_NEIGH', vlan, None)
+#######
+#
+# 'mclag' group ('config mclag...')
+#
+@config.group(cls=AbbreviationGroup)
+@click.pass_context
+def mclag(ctx):
+    """ Multi-Chassis Link Aggregation Group-related configuration """
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    ctx.obj = {'db': config_db}
+    pass
+
+#
+# 'mclag' command ('config mclag add ...')
+#
+@mclag.command('add')
+@click.argument('domain_id', metavar='<domain_id>', required=True)
+@click.argument('local_ip_addr', metavar='<local_ip_addr>', required=True)
+@click.argument('peer_ip_addr', metavar='<peer_ip_addr>', required=True)
+@click.argument('peer_ifname', metavar='[peer_ifname]', required=False)
+@click.pass_context
+def add_mclag(ctx, domain_id, local_ip_addr, peer_ip_addr, peer_ifname):
+    """Add MCLAG domain"""
+    if not mclag_domain_id_is_valid(int(domain_id)):
+        ctx.fail('Invalid Domain ID {}. Valid range [1 to 4095].'.format(domain_id))
+    if not is_ipaddress(local_ip_addr):
+        ctx.fail('Invalid Local IP address {}.'.format(local_ip_addr))
+    if not is_ipaddress(peer_ip_addr):
+        ctx.fail('Invalid Peer IP address {}.'.format(peer_ip_addr))
+
+    data = {
+        'source_ip': local_ip_addr,
+        'peer_ip': peer_ip_addr
+    }
+    if peer_ifname is not None:
+        interface_name = peer_ifname
+        if get_interface_naming_mode() == 'alias':
+            interface_name = interface_alias_to_name(peer_ifname)
+            if interface_name is None:
+                ctx.fail('\'peer_ifname\' is None!')
+        data['peer_link'] = interface_name
+        if interface_name.startswith('Ethernet') is False and interface_name.startswith('PortChannel') is False:
+            ctx.fail('Invalid Peer interface name {}. It can only be ethernet port or port channel.'.format(peer_ifname))
+        if interface_name_is_valid(interface_name) is False:
+            ctx.fail('Invalid Peer interface name {}. Please enter existing interface.'.format(peer_ifname))
+
+    db = ctx.obj['db']
+    db.set_entry('MCLAG_DOMAIN', domain_id, data)
+
+#
+# 'mclag' command ('config mclag del ...')
+#
+@mclag.command('del')
+@click.argument('domain_id', metavar='<domain_id>', required=True)
+@click.pass_context
+def del_mclag(ctx, domain_id):
+    """Remove MCLAG domain"""
+    db = ctx.obj['db']
+    db.set_entry('MCLAG_DOMAIN', domain_id, None)
+
+#
+# 'mclag member' group ('config mclag member ...')
+#
+@mclag.group('member')
+@click.pass_context
+def mclag_member(ctx):
+    pass
+
+#
+# 'mclag member' command ('config mclag member add ...')
+#
+@mclag_member.command('add')
+@click.argument('domain_id', metavar='<domain_id>', required=True)
+@click.argument('portchannel_name', metavar='<portchannel_name>', required=True)
+@click.pass_context
+def add_mclag_member(ctx, domain_id, portchannel_name):
+    """Add member to MCLAG domain"""
+    db = ctx.obj['db']
+    domain = db.get_entry('MCLAG_DOMAIN', domain_id)
+    if len(domain) == 0:
+        ctx.fail('MCLAG Domain {} doesn\'t exist.'.format(domain_id))
+
+    portchannel = portchannel_name
+    if get_interface_naming_mode() == "alias":
+        portchannel = interface_alias_to_name(portchannel)
+        if portchannel is None:
+            ctx.fail('\'portchannel_name\' is None!')
+    if portchannel.startswith('PortChannel') is False:
+        ctx.fail('Invalid portchannel name {}. MCLAG interfaces can be only portchannels.'.format(portchannel))
+    if interface_name_is_valid(portchannel) is False:
+        ctx.fail('Invalid portchannel name {}. Please enter existing portchannel.'.format(portchannel))
+
+    db.set_entry('MCLAG_INTERFACE', (domain_id, portchannel), {'NULL': 'NULL'})
+
+#
+# 'mclag member' command ('config mclag member del ...')
+#
+@mclag_member.command('del')
+@click.argument('domain_id', metavar='<domain_id>', required=True)
+@click.argument('portchannel_name', metavar='<portchannel_name>', required=True)
+@click.pass_context
+def del_mclagl_member(ctx, domain_id, portchannel_name):
+    """Remove member from MCLAG domain"""
+    db = ctx.obj['db']
+    db.set_entry('MCLAG_INTERFACE', (domain_id, portchannel_name), None)
+
+#
+# 'mclag unique-ip' group ('config mclag unique-ip ...')
+#
+@mclag.group('unique-ip')
+@click.pass_context
+def mclag_unique_ip(ctx):
+    pass
+
+#
+# 'mclag unique-ip' command ('config mclag unique-ip add ...')
+#
+@mclag_unique_ip.command('add')
+@click.argument('vlan_interface', metavar='<vlan_interface>', required=True)
+@click.pass_context
+def add_vlan_interface(ctx, vlan_interface):
+    """Add Vlan interface"""
+    if vlan_interface.startswith('Vlan') is False:
+        ctx.fail('Invalid Vlan interface {}. Only VLAN interface supported currently.'.format(vlan_interface))
+
+    db = ctx.obj['db']
+    vlan = db.get_entry('VLAN', vlan_interface)
+    if len(vlan) == 0:
+        ctx.fail('Invalid Vlan interface {}. Please enter existing Vlan.'.format(vlan_interface))
+
+    db.set_entry('MCLAG_UNIQUEIP_TABLE', vlan_interface, {'NULL': 'NULL'})
+
+#
+# 'mclag unique-ip' command ('config mclag unique-ip del ...')
+#
+@mclag_unique_ip.command('del')
+@click.argument('vlan_interface', metavar='<vlan_interface>', required=True)
+@click.pass_context
+def del_vlan_interface(ctx, vlan_interface):
+    """Remove Vlan interface """
+    db = ctx.obj['db']
+    db.set_entry('MCLAG_UNIQUEIP_TABLE', vlan_interface, None)
 
 if __name__ == '__main__':
     config()
