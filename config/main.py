@@ -810,6 +810,7 @@ def _get_disabled_services_list():
 def _stop_services():
     # on Mellanox platform pmon is stopped by syncd
     services_to_stop = [
+        'mgmt-framework',
         'restapi',
         'swss',
         'lldp',
@@ -843,7 +844,8 @@ def _reset_failed_services():
         'teamd',
         'nat',
         'sflow',
-        'restapi'
+        'restapi',
+        'mgmt-framework'
     ]
 
     execute_systemctl(services_to_reset, SYSTEMCTL_ACTION_RESET_FAILED)
@@ -863,7 +865,8 @@ def _restart_services():
         'hostcfgd',
         'nat',
         'sflow',
-        'restapi'
+        'restapi',
+        'mgmt-framework'
     ]
 
     disable_services = _get_disabled_services_list()
