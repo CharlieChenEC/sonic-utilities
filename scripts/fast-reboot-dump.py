@@ -39,7 +39,7 @@ def generate_neighbor_entries(filename, all_available_macs):
         arp_output.append(obj)
 
         ip_addr = key.split(':')[2]
-        iif ipaddress.ip_interface(ip_addr).ip.version != 4:
+        if ipaddress.ip_interface(ip_addr).ip.version != 4:
             #This is ipv6 address
             ip_addr = key.replace(key.split(':')[0] + ':' + key.split(':')[1] + ':', '')
         neighbor_entries.append((vlan_name, mac, ip_addr))
