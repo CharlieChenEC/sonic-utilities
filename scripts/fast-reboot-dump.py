@@ -11,7 +11,6 @@ import binascii
 import argparse
 import syslog
 import traceback
-import ipaddress
 
 
 ARP_CHUNK = binascii.unhexlify('08060001080006040001') # defines a part of the packet for ARP Request
@@ -39,7 +38,7 @@ def generate_neighbor_entries(filename, all_available_macs):
         arp_output.append(obj)
 
         ip_addr = key.split(':')[2]
-        if ipaddress.ip_interface(ip_addr).ip.version != 4:
+        if '.' not in ip_addr:
             #This is ipv6 address
             ip_addr = key.replace(key.split(':')[0] + ':' + key.split(':')[1] + ':', '')
         neighbor_entries.append((vlan_name, mac, ip_addr))
@@ -213,7 +212,7 @@ def send_ndp(s, src_mac, src_ip, dst_mac_s, dst_ip_s):
 
     return
 
-def send_garp_nd(neighbor_entries, map_mac_ip_per_vlan):
+def garp_ndp_send(neighbor_entries, map_mac_ip_per_vlan):
     ETH_P_ALL = 0x03
 
     # generate source ip addresses for arp packets
@@ -232,7 +231,7 @@ def send_garp_nd(neighbor_entries, map_mac_ip_per_vlan):
     # send arp/ndp packets
     for vlan_name, dst_mac, dst_ip in neighbor_entries:
         src_if = map_mac_ip_per_vlan[vlan_name][dst_mac]
-        if ipaddress.ip_interface(dst_ip).ip.version == 4:
+        if ':' not in dst_ip:
             send_arp(sockets[src_if], src_mac_addrs[src_if], src_ip_addrs[vlan_name], dst_mac, dst_ip)
         else:
             send_ndp(sockets[src_if], src_mac_addrs[src_if], src_ip_addrs[vlan_name], dst_mac, dst_ip)
@@ -288,7 +287,7 @@ def main():
     all_available_macs, map_mac_ip_per_vlan = generate_fdb_entries(root_dir + '/fdb.json')
     neighbor_entries = generate_neighbor_entries(root_dir + '/arp.json', all_available_macs)
     generate_default_route_entries(root_dir + '/default_routes.json')
-    send_garp_nd(neighbor_entries, map_mac_ip_per_vlan)
+    garp_ndp_send(neighbor_entries, map_mac_ip_per_vlan)
     return 0
 
 if __name__ == '__main__':
