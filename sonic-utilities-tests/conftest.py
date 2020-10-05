@@ -18,8 +18,19 @@ scripts_path = os.path.join(modules_path, "scripts")
 
 @pytest.fixture(scope = 'module')
 def get_cmd_module():
+    ###################################
+    # There are some functions will be executed immediately when import config/main.py.
+    # Needs to replace those functions with mock functions to return mock data.
     mock_version_info = {'asic_type': 'broadcom'}
     sonic_device_util.get_sonic_version_info = mock.MagicMock(return_value = mock_version_info)
+
+    # UtilHelper.get_platform_and_hwsku() spawns subprocess to get data from real redis-db.
+    # It causes program hang when running unit tests, because the required data does not exist in redis-db.
+    # Shall mock this function to solve hang issue.
+    from utilities_common.util_base import UtilHelper
+    mock_platform_and_hwsku = ("x86_64-accton_as7726_32x-r0", "Accton-AS7726-32X")
+    UtilHelper.get_platform_and_hwsku = mock.MagicMock(return_value = mock_platform_and_hwsku)
+    ###################################
 
     import config.main as config
     import show.main as show
