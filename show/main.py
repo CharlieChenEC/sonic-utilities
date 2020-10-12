@@ -3660,7 +3660,7 @@ def tunnel(count):
       	output += ('%s \n' % (str(num)))
         click.echo(output)
 
-@vxlan.command()
+@vxlan.command('remote_vni')
 @click.argument('remote_vtep_ip', required=True)
 @click.argument('count', required=False)
 def remote_vni(remote_vtep_ip, count):
@@ -3707,7 +3707,7 @@ def remote_vni(remote_vtep_ip, count):
       output += ('%s \n' % (str(num)))
       click.echo(output)
 
-@vxlan.command()
+@vxlan.command('remote_mac')
 @click.argument('remote_vtep_ip', required=True)
 @click.argument('count', required=False)
 def remote_mac(remote_vtep_ip, count):

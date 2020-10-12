@@ -4185,7 +4185,7 @@ def del_vxlan_map_range(ctx, vxlan_name, vlan_start, vlan_end, vni_start):
 #
 # 'neigh_suppress' group ('config neigh_suppress...')
 #
-@config.group()
+@config.group('neigh_suppress')
 @click.pass_context
 def neigh_suppress(ctx):
     """ Neighbour Suppress VLAN-related configuration """
