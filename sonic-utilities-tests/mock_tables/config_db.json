@@ -178,6 +178,12 @@
         "IPv4": "enable",
         "IPv6": "disable"
     },
+    "VLAN|Vlan100": {
+        "vlanid": "100"
+    },
+    "VLAN|Vlan101": {
+        "vlanid": "101"
+    },
     "VLAN|Vlan1000": {
         "vlanid": "1000"
     },

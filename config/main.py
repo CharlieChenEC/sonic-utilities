@@ -891,7 +891,7 @@ def is_ipaddress(val):
         return False
     try:
         netaddr.IPAddress(str(val))
-    except ValueError:
+    except netaddr.core.AddrFormatError, ValueError:
         return False
     return True
 
