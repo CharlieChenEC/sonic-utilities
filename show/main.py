@@ -939,33 +939,35 @@ def expected(interfacename):
         return
 
     #Swap Key and Value from interface: name to name: interface
-    device2interface_dict = {}
-    for port in natsorted(neighbor_dict.keys()):
-        temp_port = port
-        if get_interface_mode() == "alias":
+    if get_interface_mode() == "alias":
+        for port in natsorted(neighbor_dict.keys()):
+            temp_port = port
             port = iface_alias_converter.name_to_alias(port)
             neighbor_dict[port] = neighbor_dict.pop(temp_port)
-        device2interface_dict[neighbor_dict[port]['name']] = {'localPort': port, 'neighborPort': neighbor_dict[port]['port']}
 
     header = ['LocalPort', 'Neighbor', 'NeighborPort', 'NeighborLoopback', 'NeighborMgmt', 'NeighborType']
     body = []
     if interfacename:
-        for device in natsorted(neighbor_metadata_dict.keys()):
-            if device2interface_dict[device]['localPort'] == interfacename:
-                body.append([device2interface_dict[device]['localPort'],
+        for port in natsorted(neighbor_dict.keys()):
+            if port == interfacename:
+                device = neighbor_dict[port]['name']
+                if device in neighbor_metadata_dict.keys():
+                    body.append([port,
+                                 device,
+                                 neighbor_dict[port]['port'],
+                                 neighbor_metadata_dict[device]['lo_addr'],
+                                 neighbor_metadata_dict[device]['mgmt_addr'],
+                                 neighbor_metadata_dict[device]['type']])
+    else:
+        for port in natsorted(neighbor_dict.keys()):
+            device = neighbor_dict[port]['name']
+            if device in neighbor_metadata_dict.keys():
+                body.append([port,
                              device,
-                             device2interface_dict[device]['neighborPort'],
+                             neighbor_dict[port]['port'],
                              neighbor_metadata_dict[device]['lo_addr'],
                              neighbor_metadata_dict[device]['mgmt_addr'],
                              neighbor_metadata_dict[device]['type']])
-    else:
-        for device in natsorted(neighbor_metadata_dict.keys()):
-            body.append([device2interface_dict[device]['localPort'],
-                         device,
-                         device2interface_dict[device]['neighborPort'],
-                         neighbor_metadata_dict[device]['lo_addr'],
-                         neighbor_metadata_dict[device]['mgmt_addr'],
-                         neighbor_metadata_dict[device]['type']])
 
     click.echo(tabulate(body, header))
 
