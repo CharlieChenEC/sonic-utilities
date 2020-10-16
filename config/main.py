@@ -616,6 +616,13 @@ def _is_neighbor_ipaddress(config_db, ipaddress):
     entry = config_db.get_entry('BGP_NEIGHBOR', ipaddress)
     return True if entry else False
 
+def is_sag_configured_on_interface(config_db, interface_name):
+    if interface_name.startswith("Vlan"):
+        for addr_type in ['IPv4', 'IPv6']:
+            if len(config_db.get_entry('SAG', (interface_name, addr_type))) >  0:
+                return True
+    return False
+
 def set_sag_interface(ctx, db, addr_type, vlan_id, ip_addr) :
     separator = ','
     if len(db.get_entry('SAG', (vlan_id, addr_type))) ==  0:
@@ -2605,7 +2612,8 @@ def remove(ctx, interface_name, ip_addr):
         config_db.set_entry(table_name, (interface_name, ip_addr), None)
         interface_dependent = interface_ipaddr_dependent_on_interface(config_db, interface_name)
         if len(interface_dependent) == 0 and is_interface_bind_to_vrf(config_db, interface_name) is False:
-            config_db.set_entry(table_name, interface_name, None)
+            if is_sag_configured_on_interface(config_db, interface_name) is False:
+                config_db.set_entry(table_name, interface_name, None)
 
         command = "ip neigh flush dev {} {}".format(interface_name, ip_addr)
         run_command(command)
@@ -2754,39 +2762,50 @@ def ip(ctx):
     pass
 
 @ip.command('add')
-@click.argument('vlan_id', metavar='<vlan_id>', required=True)
+@click.argument('vlan_interface', metavar='<vlan_interface>', required=True)
 @click.argument('ip_addr', metavar='<ip_addr>', required=True)
 @click.pass_context
-def add(ctx, vlan_id, ip_addr) :
+def add(ctx, vlan_interface, ip_addr) :
     ver = ipaddress.ip_interface(ip_addr).ip.version
     config_db = ctx.obj['config_db']
     state_db = ctx.obj['state_db']
-    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_id)) != None :
+    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_interface)) != None :
         if ver == 4 :
             #ipv4
-            set_sag_interface(ctx, config_db,'IPv4', vlan_id, ip_addr)
+            set_sag_interface(ctx, config_db,'IPv4', vlan_interface, ip_addr)
         else :
             #ipv6
-            set_sag_interface(ctx, config_db,'IPv6', vlan_id, ip_addr)
-    else: ctx.fail("'{}' is not existed ".format(vlan_id))
+            set_sag_interface(ctx, config_db,'IPv6', vlan_interface, ip_addr)
+        table_name = get_interface_table_name(vlan_interface)
+        if not table_name == "":
+            interface_entry = config_db.get_entry(table_name, vlan_interface)
+            if len(interface_entry) == 0:
+                config_db.set_entry(table_name, vlan_interface, {"NULL": "NULL"})
+    else: ctx.fail("'{}' does not exists in VLAN table ".format(vlan_interface))
 
 
 @ip.command('del')
-@click.argument('vlan_id', metavar='<vlan_id>', required=True)
+@click.argument('vlan_interface', metavar='<vlan_interface>', required=True)
 @click.argument('ip_addr', metavar='<ip_addr>', required=True)
 @click.pass_context
-def delete(ctx, vlan_id, ip_addr) :
+def delete(ctx, vlan_interface, ip_addr) :
     ver = ipaddress.ip_interface(ip_addr).ip.version
     config_db = ctx.obj['config_db']
     state_db = ctx.obj['state_db']
-    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_id)) != None :
+    if state_db.keys(state_db.STATE_DB,'VLAN_TABLE|{}'.format(vlan_interface)) != None :
         if ver == 4 :
             #ipv4
-            delete_sag_interface(ctx, config_db,'IPv4', vlan_id, ip_addr)
+            delete_sag_interface(ctx, config_db,'IPv4', vlan_interface, ip_addr)
         else :
             #ipv6
-            delete_sag_interface(ctx, config_db,'IPv6', vlan_id, ip_addr)
-    else: ctx.fail("'{}' is not existed ".format(vlan_id))
+            delete_sag_interface(ctx, config_db,'IPv6', vlan_interface, ip_addr)
+        if is_sag_configured_on_interface(config_db, vlan_interface) is False:
+            table_name = get_interface_table_name(vlan_interface)
+            if not table_name == "":
+                interface_dependent = interface_ipaddr_dependent_on_interface(config_db, vlan_interface)
+                if len(interface_dependent) == 0 and is_interface_bind_to_vrf(config_db, vlan_interface) is False:
+                    config_db.set_entry(table_name, vlan_interface, None)
+    else: ctx.fail("'{}' does not exists in VLAN table ".format(vlan_interface))
 
 
 #
