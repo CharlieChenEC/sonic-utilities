@@ -589,11 +589,12 @@ def get_interface_vrf_name(config_db, interface_name):
         return entry.get("vrf_name")
     return "default"
 
-def is_ipaddress_overlapped(interface_name, ip_addr):
+@click.pass_context
+def is_ipaddress_overlapped(ctx, interface_name, ip_addr):
     """Check if the ip address overlapped with existing networks in the same vrf
     """
-    config_db = ConfigDBConnector()
-    config_db.connect()
+    config_db = ctx.obj["config_db"]
+
     interface_dict = config_db.get_table('INTERFACE')
     interface_dict.update(config_db.get_table('PORTCHANNEL_INTERFACE'))
     interface_dict.update(config_db.get_table('VLAN_INTERFACE'))
@@ -2911,12 +2912,36 @@ def ip(ctx):
 # 'add' subcommand
 #
 
+# get all ipv4 prefixes configured on the interface
+@click.pass_context
+def getIntfIPv4Addresses(ctx, db, tblName, ifName):
+
+    keys = db.get_table(tblName).keys()
+
+    intfIpMap = dict()
+    for key in keys :
+        if not isinstance(key, tuple) or len(key) < 2:
+            continue
+
+        if key[0] != ifName:
+            continue
+
+        try:
+            ipv4_address = ipaddress.IPv4Address(key[1].split("/")[0])
+            ipInfo = db.get_entry(tblName, key)
+            intfIpMap[key[1]] = ipInfo
+        except ipaddress.AddressValueError:
+            continue
+
+    return intfIpMap
+
 @ip.command()
 @click.argument('interface_name', metavar='<interface_name>', required=True)
 @click.argument("ip_addr", metavar="<ip_addr>", required=True)
 @click.argument('gw', metavar='<default gateway IP address>', required=False)
+@click.option('--secondary', help="Specify a secondary IPv4 address", is_flag=True)
 @click.pass_context
-def add(ctx, interface_name, ip_addr, gw):
+def add(ctx, interface_name, ip_addr, gw, secondary):
     """Add an IP address towards the interface"""
     config_db = ctx.obj["config_db"]
     if get_interface_naming_mode() == "alias":
@@ -2966,7 +2991,23 @@ def add(ctx, interface_name, ip_addr, gw):
                 config_db.set_entry(table_name, interface_name, {"admin_status": "up"})
             else:
                 config_db.set_entry(table_name, interface_name, {"NULL": "NULL"})
-        config_db.set_entry(table_name, (interface_name, ip_addr), {"NULL": "NULL"})
+
+        # secondary address logic for ipv4
+        if ip_network.version == 4:
+            ipMap = getIntfIPv4Addresses(config_db, table_name, interface_name)
+
+            if secondary and len(ipMap) == 0:
+                ctx.fail("Primary IPv4 address must be added first")
+            if (not secondary) and len(ipMap) > 0:
+                ctx.fail("Primary address already exists")
+
+            if secondary:
+                config_db.set_entry(table_name, (interface_name, ip_addr), {"NULL": "NULL", "secondary": "true"})
+            else:
+                config_db.set_entry(table_name, (interface_name, ip_addr), {"NULL": "NULL"})
+        else:
+            config_db.set_entry(table_name, (interface_name, ip_addr), {"NULL": "NULL"})
+
     except ValueError:
         ctx.fail("'ip_addr' is not valid.")
 
@@ -2977,8 +3018,9 @@ def add(ctx, interface_name, ip_addr, gw):
 @ip.command()
 @click.argument('interface_name', metavar='<interface_name>', required=True)
 @click.argument("ip_addr", metavar="<ip_addr>", required=True)
+@click.option('--secondary', help="Specify a secondary IPv4 address", is_flag=True)
 @click.pass_context
-def remove(ctx, interface_name, ip_addr):
+def remove(ctx, interface_name, ip_addr, secondary):
     """Remove an IP address from the interface"""
     config_db = ctx.obj["config_db"]
     if get_interface_naming_mode() == "alias":
@@ -2987,7 +3029,7 @@ def remove(ctx, interface_name, ip_addr):
             ctx.fail("'interface_name' is None!")
 
     try:
-        ipaddress.ip_network(unicode(ip_addr), strict=False)
+        ip_network = ipaddress.ip_network(unicode(ip_addr), strict=False)
 
         if interface_name == 'eth0':
             config_db.set_entry("MGMT_INTERFACE", (interface_name, ip_addr), None)
@@ -2997,7 +3039,26 @@ def remove(ctx, interface_name, ip_addr):
         table_name = get_interface_table_name(interface_name)
         if table_name == "":
             ctx.fail("'interface_name' is not valid. Valid names [Ethernet/PortChannel/Vlan/Loopback]")
+
+        # secondary address logic for ipv4
+        ipMap = getIntfIPv4Addresses(config_db, table_name, interface_name)
+
+        if ip_network.version == 4:
+            v = ipMap.get(ip_addr)
+            if v is not None:
+                if secondary:
+                    if v.get("secondary") != "true":
+                        ctx.fail("No such address (" + ip_addr + ") configured on this interface as secondary address")
+                else:
+                    if v.get("secondary") == "true":
+                        ctx.fail("No such address (" + ip_addr + ") configured on this interface as primary address")
+                    if len(ipMap) > 1:
+                        ctx.fail("Primary IPv4 address delete not permitted when secondary IPv4 address exists")
+            else:
+                ctx.fail("No such address (" + ip_addr + ") configured on this interface")
+
         config_db.set_entry(table_name, (interface_name, ip_addr), None)
+
         interface_dependent = interface_ipaddr_dependent_on_interface(config_db, interface_name)
         if len(interface_dependent) == 0 and is_interface_bind_to_vrf(config_db, interface_name) is False:
             if is_sag_configured_on_interface(config_db, interface_name) is False:

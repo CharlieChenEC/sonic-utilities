@@ -1571,6 +1571,23 @@ def get_if_master(iface):
     else:
         return ""
 
+def get_interface_table_name(interface_name):
+    """Get table name by interface_name prefix
+    """
+    if interface_name.startswith("Ethernet"):
+        if VLAN_SUB_INTERFACE_SEPARATOR in interface_name:
+            return "VLAN_SUB_INTERFACE"
+        return "INTERFACE"
+    elif interface_name.startswith("PortChannel"):
+        if VLAN_SUB_INTERFACE_SEPARATOR in interface_name:
+            return "VLAN_SUB_INTERFACE"
+        return "PORTCHANNEL_INTERFACE"
+    elif interface_name.startswith("Vlan"):
+        return "VLAN_INTERFACE"
+    elif interface_name.startswith("Loopback"):
+        return "LOOPBACK_INTERFACE"
+    else:
+        return ""
 
 #
 # 'show ip interfaces' command
@@ -1582,7 +1599,7 @@ def get_if_master(iface):
 @ip.command()
 def interfaces():
     """Show interfaces IPv4 address"""
-    header = ['Interface', 'Master', 'IPv4 address/mask', 'Admin/Oper', 'BGP Neighbor', 'Neighbor IP']
+    header = ['Interface', 'Master', 'IPv4 address/mask', 'Pri/Sec', 'Admin/Oper', 'BGP Neighbor', 'Neighbor IP']
     data = []
     bgp_peer = get_bgp_peer()
 
@@ -1590,15 +1607,28 @@ def interfaces():
 
     for iface in interfaces:
         ipaddresses = netifaces.ifaddresses(iface)
+        # get secondary attr of ip from config_db
+        table_name = get_interface_table_name(iface)
+        config_db = ConfigDBConnector()
+        config_db.connect()
 
         if netifaces.AF_INET in ipaddresses:
             ifaddresses = []
+            pri_sec = []
             for ipaddr in ipaddresses[netifaces.AF_INET]:
                 neighbor_name = 'N/A'
                 neighbor_ip = 'N/A'
                 local_ip = str(ipaddr['addr'])
                 netmask = netaddr.IPAddress(ipaddr['netmask']).netmask_bits()
+
+                ipEntry = config_db.get_entry(table_name, (iface, local_ip + "/" + str(netmask)))
+                if ipEntry and ipEntry.get("secondary") == "true":
+                    pri_sec.append("Secondary")
+                else:
+                    pri_sec.append("Primary")
+
                 ifaddresses.append(["", local_ip + "/" + str(netmask)])
+
                 try:
                     neighbor_name = bgp_peer[local_ip][0]
                     neighbor_ip = bgp_peer[local_ip][1]
@@ -1615,10 +1645,10 @@ def interfaces():
                 if get_interface_mode() == "alias":
                     iface = iface_alias_converter.name_to_alias(iface)
 
-                data.append([iface, master, ifaddresses[0][1], admin + "/" + oper, neighbor_name, neighbor_ip])
+                data.append([iface, master, ifaddresses[0][1], pri_sec[0], admin + "/" + oper, neighbor_name, neighbor_ip])
 
-            for ifaddr in ifaddresses[1:]:
-                data.append(["", "", ifaddr[1], ""])
+            for ifaddr, addr_type in zip(ifaddresses[1:], pri_sec[1:]):
+                data.append(["", "", ifaddr[1], addr_type, ""])
 
     print tabulate(data, header, tablefmt="simple", stralign='left', missingval="")
 
