@@ -3962,5 +3962,70 @@ def unique_ip(ctx):
     output = output[:-1] if len(unique_ip_keys) > 0 else output
     click.echo(output)
 
+#
+# ' pvlan' command ("show pvlan ...")
+#
+@cli.group(cls=AliasedGroup)
+@click.pass_context
+def pvlan(ctx):
+    """Show Private VLAN related information"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    app_db = ConfigDBConnector()
+    app_db.db_connect(app_db.APPL_DB)
+    state_db = ConfigDBConnector()
+    state_db.db_connect(state_db.STATE_DB)
+    ctx.obj = {'config_db': config_db, 'app_db': app_db, 'state_db': state_db}
+    pass
+
+#
+# 'pvlan config' command ("show pvlan config")
+#
+@pvlan.command('config')
+@click.pass_context
+def config(ctx):
+    """Show all Private VLAN configuration"""
+    config_db = ctx.obj['config_db']
+    header = ['Primary', 'Secondary', 'Type', 'Interface']
+    body = []
+    vlan_data = config_db.get_table('VLAN')
+    vlan_keys = natsorted(vlan_data.keys())
+
+    for k in vlan_keys:
+        vlan_type = vlan_data[k].get('private_type')
+
+        # not a private vlan
+        if vlan_type == None:
+            continue
+
+        primary_vid = None
+        secondary_vid = None
+        main_vid = 0
+        if vlan_type == 'primary':
+            primary_vid = vlan_data[k].get('vlanid')
+            main_vid = primary_vid
+        elif vlan_type == 'community' or vlan_type == 'isolated':
+            secondary_vid = vlan_data[k].get('vlanid')
+            main_vid = secondary_vid
+            primary_id = vlan_data[k].get('primary_id')
+            if primary_id != None and primary_id != '0':
+                primary_vid = primary_id
+        else:
+            continue
+
+        # get vlan members
+        vlan_member_keys = config_db.keys('CONFIG_DB', "VLAN_MEMBER|Vlan{}|*".format(main_vid))
+        if vlan_member_keys != None:
+            for member in natsorted(vlan_member_keys):
+                intf_name = member.split('|')[2]
+                body.append([primary_vid, secondary_vid, vlan_type, intf_name])
+                primary_vid = None
+                secondary_vid = None
+                vlan_type = None
+        else:
+            body.append([primary_vid, secondary_vid, vlan_type, None])
+
+    click.echo(tabulate(body, header))
+
 if __name__ == '__main__':
     cli()
