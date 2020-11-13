@@ -20,6 +20,7 @@ from __future__ import print_function
 import sys
 import argparse
 import swsssdk
+import sonic_device_util
 
 PORT_TABLE_NAME = "PORT"
 PORT_SPEED_CONFIG_FIELD_NAME = "speed"
@@ -53,6 +54,16 @@ class portconfig(object):
         self.db.mod_entry(PORT_TABLE_NAME, port, {PORT_SPEED_CONFIG_FIELD_NAME: speed})
 
     def set_fec(self, port, fec):
+        if sonic_device_util.get_hwsku() == "Accton-MINIPACK":
+            port_speed = self.db.get_entry(PORT_TABLE_NAME, port).get(PORT_SPEED_CONFIG_FIELD_NAME)
+            if port_speed == "100000":
+                if fec != "rs":
+                    raise Exception("fec mode must be rs for 100G speed port in AS8000")
+            elif port_speed == "40000":
+                if fec != "none":
+                    raise Exception("fec mode must be none for 40G speed port in AS8000")
+            else:
+                raise Exception("Unknown speed config for AS8000")
         if self.verbose:
             print("Setting fec %s on port %s" % (fec, port))
         self.db.mod_entry(PORT_TABLE_NAME, port, {PORT_FEC_CONFIG_FIELD_NAME: fec})
