@@ -737,6 +737,8 @@ def _change_hostname(hostname):
         run_command('echo "127.0.0.1 {}" >> /etc/hosts'.format(hostname), display_cmd=True)
 
 def storm_control_interface_validate(port_name):
+    """Check if the interface name is valid
+    """
     if get_interface_naming_mode() == "alias":
         port_name = interface_alias_to_name(port_name)
         if port_name is None:
@@ -745,59 +747,52 @@ def storm_control_interface_validate(port_name):
 
     if (port_name.startswith("Ethernet")):
         if interface_name_is_valid(port_name) is False:
-            click.echo("Interface name %s is invalid. Please enter a valid interface name" %(port_name))
+            click.echo("Interface name %s is invalid. Please enter a valid interface name" % (port_name))
             return False
     else:
-        click.echo("Storm-control is supported only on Ethernet interfaces. Not supported on %s" %(port_name))
+        click.echo("Storm-control is supported only on Ethernet interfaces. Not supported on %s" % (port_name))
         return False
 
-    return True
-
-def storm_control_bps_validate(bps):
-    #    if bps not in range(0,100000000001):
-    #    click.echo("bps value must be in range 0-100000000000")
-    #    return False
     return True
 
 def storm_control_set_entry(port_name, kbps, storm_type):
-
+    """Set the info of storm control setting into config db
+    """
     if storm_control_interface_validate(port_name) is False:
-        return False
-
-    if storm_control_bps_validate(kbps) is False:
         return False
 
     config_db = ConfigDBConnector()
     config_db.connect()
     key = port_name + '|' + storm_type
-    entry = config_db.get_entry('PORT_STORM_CONTROL',key)
+    entry = config_db.get_entry('PORT_STORM_CONTROL', key)
 
     if len(entry) == 0:
-        config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps':kbps})
+        config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
     else:
-        kbps_value = int(entry.get('kbps',0))
-        click.echo("Existing value of bps %d"%(kbps_value))
+        kbps_value = int(entry.get('kbps', 0))
+        click.echo("Existing value of kbps %d" % (kbps_value))
         if kbps_value != kbps:
-            config_db.mod_entry('PORT_STORM_CONTROL',key,{'kbps':kbps})
+            config_db.mod_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
 
     return True
 
 def storm_control_delete_entry(port_name, storm_type):
-
+    """Remove the info of storm control setting from config db
+    """
     if storm_control_interface_validate(port_name) is False:
         return False
 
     config_db = ConfigDBConnector()
     config_db.connect()
     key = port_name + '|' + storm_type
-    entry = config_db.get_entry('PORT_STORM_CONTROL',key)
+    entry = config_db.get_entry('PORT_STORM_CONTROL', key)
 
     if len(entry) == 0:
-        click.echo("%s storm-control not enabled on interface %s"%(storm_type, port_name))
+        click.echo("%s storm-control not enabled on interface %s" % (storm_type, port_name))
         return False
     else:
-        config_db.set_entry('PORT_STORM_CONTROL',key,None)
-        click.echo("deleted %s storm-control from interface %s"%(storm_type, port_name))
+        config_db.set_entry('PORT_STORM_CONTROL', key, None)
+        click.echo("deleted %s storm-control from interface %s" % (storm_type, port_name))
 
     return True
 
@@ -3768,22 +3763,20 @@ def broadcast():
     pass
 
 @broadcast.command('add')
-@click.argument('port_name',metavar='<port_name>', required=True)
-@click.argument('kbps',metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('port_name', metavar='<port_name>', required=True)
+@click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
 @click.pass_context
-def add_broadcast_storm(ctx,port_name,kbps):
-    print"add broadcast storm-control"
+def add_broadcast_storm(ctx, port_name, kbps):
+    click.echo("add broadcast storm-control")
 
     if storm_control_set_entry(port_name, kbps, 'broadcast') is False:
         ctx.fail("Unable to add broadcast storm-control")
 
 @broadcast.command('del')
-@click.argument('port_name',metavar='<port_name>', required=True)
-#@click.argument('bps',metavar='<bps_value>', required=True, type=int)
+@click.argument('port_name', metavar='<port_name>', required=True)
 @click.pass_context
-#def del_broadcast_storm(ctx,port_name,bps):
-def del_broadcast_storm(ctx,port_name):
-    print"del broadcast storm-control"
+def del_broadcast_storm(ctx, port_name):
+    click.echo("del broadcast storm-control")
 
     if storm_control_delete_entry(port_name, 'broadcast') is False:
         ctx.fail("Unable to delete broadcast storm-control")
@@ -3794,22 +3787,20 @@ def unknown_unicast():
     pass
 
 @unknown_unicast.command('add')
-@click.argument('port_name',metavar='<port_name>', required=True)
-@click.argument('kbps',metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('port_name', metavar='<port_name>', required=True)
+@click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
 @click.pass_context
-def add_unknown_unicast_storm(ctx,port_name,kbps):
-    print"add unknown-unicast storm-control"
+def add_unknown_unicast_storm(ctx, port_name, kbps):
+    click.echo("add unknown-unicast storm-control")
 
     if storm_control_set_entry(port_name, kbps, 'unknown-unicast') is False:
         ctx.fail("Unable to add unknown-unicast storm-control")
 
 @unknown_unicast.command('del')
-@click.argument('port_name',metavar='<port_name>', required=True)
-#@click.argument('bps',metavar='<bps_value>', required=True, type=int)
+@click.argument('port_name', metavar='<port_name>', required=True)
 @click.pass_context
-#def del_unknown_unicast_storm(ctx,port_name,bps):
-def del_unknown_unicast_storm(ctx,port_name):
-    print"del unknown-unicast storm-control"
+def del_unknown_unicast_storm(ctx, port_name):
+    click.echo("del unknown-unicast storm-control")
 
     if storm_control_delete_entry(port_name, 'unknown-unicast') is False:
         ctx.fail("Unable to delete unknown-unicast storm-control")
@@ -3820,22 +3811,20 @@ def unknown_multicast():
     pass
 
 @unknown_multicast.command('add')
-@click.argument('port_name',metavar='<port_name>', required=True)
-@click.argument('kbps',metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('port_name', metavar='<port_name>', required=True)
+@click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
 @click.pass_context
-def add_unknown_multicast_storm(ctx,port_name,kbps):
-    print"add unknown-multicast storm-control"
+def add_unknown_multicast_storm(ctx, port_name, kbps):
+    click.echo("add unknown-multicast storm-control")
 
     if storm_control_set_entry(port_name, kbps, 'unknown-multicast') is False:
         ctx.fail("Unable to add unknown-multicast storm-control")
 
 @unknown_multicast.command('del')
-@click.argument('port_name',metavar='<port_name>', required=True)
-#@click.argument('bps',metavar='<bps_value>', required=True, type=int)
+@click.argument('port_name', metavar='<port_name>', required=True)
 @click.pass_context
-#def del_unknown_multicast_storm(ctx,port_name,bps):
-def del_unknown_multicast_storm(ctx,port_name):
-    print"del unknown-multicast storm-control"
+def del_unknown_multicast_storm(ctx, port_name):
+    click.echo("del unknown-multicast storm-control")
 
     if storm_control_delete_entry(port_name, 'unknown-multicast') is False:
         ctx.fail("Unable to delete unknown-multicast storm-control")
@@ -4004,7 +3993,7 @@ def disable(ctx):
 # 'sflow' command ('config sflow polling-interval ...')
 #
 @sflow.command('polling-interval')
-@click.argument('interval',  metavar='<polling_interval>', required=True,
+@click.argument('interval', metavar='<polling_interval>', required=True,
                 type=int)
 @click.pass_context
 def polling_int(ctx, interval):

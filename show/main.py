@@ -914,7 +914,7 @@ def storm_control():
 
 @storm_control.command('all')
 def storm_control_all():
-    """ Show storm-control """
+    """ Show storm-control for all interfaces """
 
     header = ['Interface Name', 'Storm Type', 'Rate (kbps)']
     body = []
@@ -926,6 +926,7 @@ def storm_control_all():
 
     #To avoid further looping below
     if not table:
+        click.echo("Can't find PORT_STORM_CONTROL table in config db")
         return
 
     sorted_table = natsorted(table)
@@ -933,22 +934,18 @@ def storm_control_all():
     for storm_key in sorted_table:
         interface_name = storm_key[0]
         storm_type = storm_key[1]
-        #interface_name, storm_type = storm_key.split(':')
         data = config_db.get_entry('PORT_STORM_CONTROL', storm_key)
 
-        if not data:
-            return
-
-        kbps = data['kbps']
-
-        body.append([interface_name, storm_type, kbps])
+        if data:
+            kbps = data['kbps']
+            body.append([interface_name, storm_type, kbps])
 
     click.echo(tabulate(body, header, tablefmt="grid"))
 
 @storm_control.command('interface')
 @click.argument('interfacename', required=True)
 def storm_control_interface(interfacename):
-    """ Show storm-control """
+    """ Show storm-control for an interface """
 
     storm_type_list = ['broadcast','unknown-unicast','unknown-multicast']
 
@@ -962,6 +959,7 @@ def storm_control_interface(interfacename):
 
     #To avoid further looping below
     if not table:
+        click.echo("Can't find PORT_STORM_CONTROL table in config db")
         return
 
     for storm_type in storm_type_list:
