@@ -2027,9 +2027,13 @@ def mvrf_restart_services():
     """
     cmd="service ntp stop"
     os.system (cmd)
+    cmd="service rsyslog-config stop"
+    os.system (cmd)
     cmd="systemctl restart interfaces-config"
     os.system (cmd)
     cmd="service ntp start"
+    os.system (cmd)
+    cmd="service rsyslog-config start"
     os.system (cmd)
 
 def vrf_add_management_vrf(config_db):
