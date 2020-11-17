@@ -65,7 +65,12 @@ def get_arp_entries_map(arp_filename, config_db_filename):
         for key, config in arp.items():
             if "NEIGH_TABLE" not in key:
                 continue
-            table, vlan, ip = tuple(key.split(':'))
+            table = key.split(':')[0]
+            vlan = key.split(':')[1]
+            ip = key.split(':')[2]
+            if '.' not in ip:
+                #This is ipv6 address
+                ip = key.replace(key.split(':')[0] + ':' + key.split(':')[1] + ':', '')
             if "NEIGH_TABLE" in table and vlan in vlan_cidr.keys() \
                 and ip_address(ip) in ip_network(vlan_cidr[vlan][ip_interface(ip).version]) \
                 and "neigh" in config.keys():
