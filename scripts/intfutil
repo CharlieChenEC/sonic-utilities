@@ -4,6 +4,7 @@ import swsssdk
 import sys
 import re
 import types
+import subprocess
 from tabulate import tabulate
 from natsort import natsorted
 from swsssdk import ConfigDBConnector
@@ -43,6 +44,15 @@ VLAN_SUB_INTERFACE_SEPARATOR = "."
 VLAN_SUB_INTERFACE_TYPE = "802.1q-encapsulation"
 
 SUB_PORT = "subport"
+
+PLATFORM_ROOT_PATH = '/usr/share/sonic/device'
+SONIC_CFGGEN_PATH = '/usr/local/bin/sonic-cfggen'
+HWSKU_KEY = 'DEVICE_METADATA.localhost.hwsku'
+PLATFORM_KEY = 'DEVICE_METADATA.localhost.platform'
+
+PIM_TABLE_PREFIX = "PIM_TABLE|"
+PIM_OPER_STATUS = "oper_status"
+PIM_TYPE = "pim_type"
 
 def db_connect_configdb():
     """
@@ -340,6 +350,196 @@ def appl_db_sub_intf_status_get(appl_db, config_db, front_panel_ports_list, port
 
     return "N/A"
 
+def get_platform_and_hwsku():
+    """
+    Retrieves current platform name and hwsku
+    Raises an OSError exception when failed to fetch
+
+    Returns:
+        tuple of strings platform and hwsku
+        e.g. ("x86_64-mlnx_msn2700-r0", "ACS-MSN2700")
+    """
+    try:
+        proc = subprocess.Popen([SONIC_CFGGEN_PATH, '-H', '-v', PLATFORM_KEY],
+                                stdout=subprocess.PIPE,
+                                shell=False,
+                                stderr=subprocess.STDOUT)
+        stdout = proc.communicate()[0]
+        proc.wait()
+        platform = stdout.rstrip('\n')
+
+        proc = subprocess.Popen([SONIC_CFGGEN_PATH, '-d', '-v', HWSKU_KEY],
+                                stdout=subprocess.PIPE,
+                                shell=False,
+                                stderr=subprocess.STDOUT)
+        stdout = proc.communicate()[0]
+        proc.wait()
+        hwsku = stdout.rstrip('\n')
+    except OSError as e:
+        raise OSError("Cannot detect platform")
+
+    return (platform, hwsku)
+
+# ========================== interface-status-ext logic ==========================
+
+header_pim = ['Interface', 'Lanes', 'Speed', 'MTU', 'FEC', 'Alias', 'Vlan', 'Oper', 'Admin', 'Type', 'Asym PFC', 'PIM Slot', 'PIM Status']
+header_pim_sub_intf = ['Sub port interface', 'Speed', 'MTU', 'Vlan', 'Admin', 'Type']
+
+class IntfPim(object):
+
+    def get_pim_port_mapping(self):
+        # Get platform and hwsku
+        (platform, hwsku) = get_platform_and_hwsku()
+
+        pim_port_mapping = {}
+        # try to load platform specific module
+        try:
+            slot_profile_ini = "/".join([PLATFORM_ROOT_PATH, platform, hwsku, "slot_profile.ini"])
+            with open(slot_profile_ini) as f:
+                for line in f.readlines():
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    new_line = " ".join(line.split())
+                    pim_type, slot_index, port_base, lanes = new_line.split(' ', 3)
+                    pim_table_key = PIM_TABLE_PREFIX + "slot " + slot_index
+                    current_pim_type = self.state_db.get(self.state_db.STATE_DB, pim_table_key, PIM_TYPE)
+                    if current_pim_type == pim_type:
+                        pim_port_mapping[slot_index] = int(port_base)
+
+        except:
+            raise Exception("Can't open slot_profile.ini")
+
+        return pim_port_mapping
+
+    def get_pim_slot_index_by_intf_index(self, intf_index, pim_port_mapping):
+
+        for pim_slot in pim_port_mapping.keys():
+            if intf_index >=  pim_port_mapping[pim_slot]:
+                next_pim_slot = int(pim_slot) + 1
+                if str(next_pim_slot) not in pim_port_mapping.keys():
+                    return pim_slot
+                elif intf_index < pim_port_mapping[str(next_pim_slot)]:
+                    return pim_slot
+
+    def display_intf_pim(self, intf_name, appl_db_keys, front_panel_ports_list, portchannel_speed_dict, appl_db_sub_intf_keys, sub_intf_list, sub_intf_only, pim_port_mapping):
+        """
+            Generate interface-status output
+        """
+
+        i = {}
+        table = []
+        key = []
+
+        intf_fs = parse_interface_in_filter(intf_name)
+
+        #
+        # Iterate through all the keys and append port's associated state to
+        # the result table.
+        #
+        if not sub_intf_only:
+            for i in appl_db_keys:
+                key = re.split(':', i, maxsplit=1)[-1].strip()
+                if key in front_panel_ports_list:
+                    if intf_name is None or key in intf_fs:
+                        pim_slot_index = self.get_pim_slot_index_by_intf_index(int(appl_db_port_status_get(self.appl_db, key, "index")), pim_port_mapping)
+                        pim_table_key = PIM_TABLE_PREFIX + 'slot ' + str(pim_slot_index)
+                        table.append((key,
+                                appl_db_port_status_get(self.appl_db, key, PORT_LANES_STATUS),
+                                appl_db_port_status_get(self.appl_db, key, PORT_SPEED),
+                                appl_db_port_status_get(self.appl_db, key, PORT_MTU_STATUS),
+                                appl_db_port_status_get(self.appl_db, key, PORT_FEC),
+                                appl_db_port_status_get(self.appl_db, key, PORT_ALIAS),
+                                config_db_vlan_port_keys_get(self.combined_int_to_vlan_po_dict, self.front_panel_ports_list, key),
+                                appl_db_port_status_get(self.appl_db, key, PORT_OPER_STATUS),
+                                appl_db_port_status_get(self.appl_db, key, PORT_ADMIN_STATUS),
+                                state_db_port_optics_get(self.state_db, key, PORT_OPTICS_TYPE),
+                                appl_db_port_status_get(self.appl_db, key, PORT_PFC_ASYM_STATUS),
+                                pim_slot_index,
+                                self.state_db.get(self.state_db.STATE_DB, pim_table_key, PIM_OPER_STATUS)))
+
+            for po, value in portchannel_speed_dict.iteritems():
+                if po:
+                    if intf_name is None or po in intf_fs:
+                        table.append((po,
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_LANES_STATUS, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_SPEED, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_MTU_STATUS, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_FEC, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_ALIAS, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, "vlan", self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_OPER_STATUS, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_ADMIN_STATUS, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_OPTICS_TYPE, self.portchannel_speed_dict),
+                                appl_db_portchannel_status_get(self.appl_db, self.config_db, po, PORT_PFC_ASYM_STATUS, self.portchannel_speed_dict)))
+        else:
+            for key in appl_db_sub_intf_keys:
+                sub_intf = re.split(':', key, maxsplit=1)[-1].strip()
+                if sub_intf in sub_intf_list:
+                    table.append((sub_intf,
+                                appl_db_sub_intf_status_get(self.appl_db, self.config_db, self.front_panel_ports_list, self.portchannel_speed_dict, sub_intf, PORT_SPEED),
+                                appl_db_sub_intf_status_get(self.appl_db, self.config_db, self.front_panel_ports_list, self.portchannel_speed_dict, sub_intf, PORT_MTU_STATUS),
+                                appl_db_sub_intf_status_get(self.appl_db, self.config_db, self.front_panel_ports_list, self.portchannel_speed_dict, sub_intf, "vlan"),
+                                appl_db_sub_intf_status_get(self.appl_db, self.config_db, self.front_panel_ports_list, self.portchannel_speed_dict, sub_intf, PORT_ADMIN_STATUS),
+                                appl_db_sub_intf_status_get(self.appl_db, self.config_db, self.front_panel_ports_list, self.portchannel_speed_dict, sub_intf, PORT_OPTICS_TYPE)))
+
+        # Sorting and tabulating the result table.
+        sorted_table = natsorted(table)
+        print tabulate(sorted_table, header_pim if not sub_intf_only else header_pim_sub_intf, tablefmt="simple", stralign='right')
+
+
+    def __init__(self, intf_name):
+        """
+        Class constructor method
+        :param self:
+        :param intf_name: string of interface
+        :return:
+        """
+        self.appl_db = db_connect_appl()
+        self.state_db = db_connect_state()
+        self.config_db = db_connect_configdb()
+        if self.appl_db is None:
+            return
+        if self.state_db is None:
+            return
+        if self.config_db is None:
+            return
+
+        sub_intf_only = False
+        sub_intf_name = intf_name
+        if intf_name is not None:
+            if intf_name == SUB_PORT:
+                intf_name = None
+                sub_intf_name = None
+                sub_intf_only = True
+            else:
+                sub_intf_sep_idx = intf_name.find(VLAN_SUB_INTERFACE_SEPARATOR)
+                if sub_intf_sep_idx != -1:
+                    sub_intf_only = True
+                    intf_name = intf_name[:sub_intf_sep_idx]
+
+        self.front_panel_ports_list = get_frontpanel_port_list(self.config_db)
+        appl_db_keys = appl_db_keys_get(self.appl_db, self.front_panel_ports_list, None)
+        self.int_to_vlan_dict = get_interface_vlan_dict(self.config_db)
+        self.get_raw_po_int_configdb_info = get_raw_portchannel_info(self.config_db)
+        self.portchannel_list = get_portchannel_list(self.get_raw_po_int_configdb_info)
+        self.po_int_tuple_list = create_po_int_tuple_list(self.get_raw_po_int_configdb_info)
+        self.po_int_dict = create_po_int_dict(self.po_int_tuple_list)
+        self.int_po_dict = create_int_to_portchannel_dict(self.po_int_tuple_list)
+        self.combined_int_to_vlan_po_dict = merge_dicts(self.int_to_vlan_dict, self.int_po_dict)
+        self.portchannel_speed_dict = po_speed_dict(self.po_int_dict, self.appl_db)
+        self.portchannel_keys = self.portchannel_speed_dict.keys()
+
+        self.sub_intf_list = get_sub_port_intf_list(self.config_db)
+        appl_db_sub_intf_keys = appl_db_sub_intf_keys_get(self.appl_db, self.sub_intf_list, sub_intf_name)
+        if appl_db_keys is None:
+            return
+        pim_port_mapping = self.get_pim_port_mapping()
+        self.display_intf_pim(intf_name, appl_db_keys, self.front_panel_ports_list, self.portchannel_speed_dict, appl_db_sub_intf_keys, self.sub_intf_list, sub_intf_only, pim_port_mapping)
+
+
+
+
 # ========================== interface-status logic ==========================
 
 header_stat = ['Interface', 'Lanes', 'Speed', 'MTU', 'FEC', 'Alias', 'Vlan', 'Oper', 'Admin', 'Type', 'Asym PFC']
@@ -520,7 +720,7 @@ def main(args):
         return
 
     command = args[0]
-    if command != "status" and command != "description":
+    if command != "status" and command != "description" and command != "status_ext":
         print "No valid command provided"
         return
 
@@ -530,6 +730,12 @@ def main(args):
         interface_stat = IntfStatus(intf_name)
     elif command == "description":
         interface_desc = IntfDescription(intf_name)
+    elif command == "status_ext":
+        (platform, hwsku) = get_platform_and_hwsku()
+        if hwsku == "Accton-MINIPACK":
+            interface_ext = IntfPim(intf_name)
+        else:
+            interface_ext = IntfStatus(intf_name)
 
     sys.exit(0)
 
