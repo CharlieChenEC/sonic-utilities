@@ -1903,14 +1903,18 @@ def vlan(ctx, redis_unix_socket_path):
 
 @vlan.command('add')
 @click.argument('vid', metavar='<vid>', required=True, type=int)
+@click.argument('pvlan_type', metavar='<pvlan_type>', required=False, type=click.Choice(['primary', 'community', 'isolated']))
 @click.pass_context
-def add_vlan(ctx, vid):
+def add_vlan(ctx, vid, pvlan_type):
     if vid >= 1 and vid <= 4094:
         db = ctx.obj['db']
         vlan = 'Vlan{}'.format(vid)
         if len(db.get_entry('VLAN', vlan)) != 0:
             ctx.fail("{} already exists".format(vlan))
-        db.set_entry('VLAN', vlan, {'vlanid': vid})
+        vlan_entry = {'vlanid': vid}
+        if pvlan_type:
+            vlan_entry['private_type'] = pvlan_type
+        db.set_entry('VLAN', vlan, vlan_entry)
     else :
         ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
 
@@ -1921,10 +1925,17 @@ def del_vlan(ctx, vid):
     """Delete VLAN"""
     log_info("'vlan del {}' executing...".format(vid))
     db = ctx.obj['db']
-    keys = [ (k, v) for k, v in db.get_table('VLAN_MEMBER') if k == 'Vlan{}'.format(vid) ]
+    vlan_name = 'Vlan{}'.format(vid)
+
+    pvlan_association_table = db.get_table('PVLAN_ASSOCIATION')
+    for k, v in pvlan_association_table.items():
+        if k[0] == vlan_name or k[1] == vlan_name:
+            ctx.fail('Not allow to remove {} which still associated with other private VLAN.'.format(vlan_name))
+
+    keys = [ (k, v) for k, v in db.get_table('VLAN_MEMBER') if k == vlan_name ]
     for k in keys:
         db.set_entry('VLAN_MEMBER', k, None)
-    db.set_entry('VLAN', 'Vlan{}'.format(vid), None)
+    db.set_entry('VLAN', vlan_name, None)
 
 
 #
@@ -2014,6 +2025,72 @@ def del_vlan_member(ctx, vid, interface_name):
         vlan['members'] = members
     db.set_entry('VLAN', vlan_name, vlan)
     db.set_entry('VLAN_MEMBER', (vlan_name, interface_name), None)
+
+#
+# 'pvlan' group ('config pvlan ...')
+#
+@config.group(cls=AbbreviationGroup)
+@click.pass_context
+def pvlan(ctx):
+    """Private VLAN-related configuration tasks"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    ctx.obj = {'db': config_db}
+    pass
+
+#
+# 'pvlan association' group ('config pvlan association ...')
+#
+@pvlan.group('association')
+@click.pass_context
+def pvlan_association(ctx):
+    pass
+
+#
+# 'pvlan association' command ('config pvlan association add ...')
+#
+@pvlan_association.command('add')
+@click.argument('primary_vid', metavar='<primary_vid>', required=True, type=int)
+@click.argument('secondary_vid', metavar='<secondary_vid>', required=True, type=int)
+@click.pass_context
+def add_association(ctx, primary_vid, secondary_vid):
+    if vlan_id_is_valid(primary_vid) is False:
+        ctx.fail("Invalid Primary VLAN ID {} (1-4094)".format(primary_vid))
+    if vlan_id_is_valid(secondary_vid) is False:
+        ctx.fail("Invalid Secondary VLAN ID {} (1-4094)".format(secondary_vid))
+
+    db = ctx.obj['db']
+    primary_vlan = 'Vlan{}'.format(primary_vid)
+    if len(db.get_entry('VLAN', primary_vlan)) == 0:
+        ctx.fail("{} doesn't exist".format(primary_vlan))
+    secondary_vlan = 'Vlan{}'.format(secondary_vid)
+    if len(db.get_entry('VLAN', secondary_vlan)) == 0:
+        ctx.fail("{} doesn't exist".format(secondary_vlan))
+
+    db.set_entry('PVLAN_ASSOCIATION', (primary_vlan, secondary_vlan), {"NULL": "NULL"})
+
+#
+# 'pvlan association' command ('config pvlan association del ...')
+#
+@pvlan_association.command('del')
+@click.argument('primary_vid', metavar='<primary_vid>', required=True, type=int)
+@click.argument('secondary_vid', metavar='<secondary_vid>', required=True, type=int)
+@click.pass_context
+def del_association(ctx, primary_vid, secondary_vid):
+    if vlan_id_is_valid(primary_vid) is False:
+        ctx.fail("Invalid Primary VLAN ID {} (1-4094)".format(primary_vid))
+    if vlan_id_is_valid(secondary_vid) is False:
+        ctx.fail("Invalid Secondary VLAN ID {} (1-4094)".format(secondary_vid))
+
+    db = ctx.obj['db']
+    primary_vlan = 'Vlan{}'.format(primary_vid)
+    if len(db.get_entry('VLAN', primary_vlan)) == 0:
+        ctx.fail("{} doesn't exist".format(primary_vlan))
+    secondary_vlan = 'Vlan{}'.format(secondary_vid)
+    if len(db.get_entry('VLAN', secondary_vlan)) == 0:
+        ctx.fail("{} doesn't exist".format(secondary_vlan))
+
+    db.set_entry('PVLAN_ASSOCIATION', (primary_vlan, secondary_vlan), None)
 
 def mvrf_restart_services():
     """Restart interfaces-config service and NTP service when mvrf is changed"""
