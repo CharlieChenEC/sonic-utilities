@@ -97,6 +97,9 @@
     * [PFC](#pfc)
     * [Queue And Priority-Group](#queue-and-priority-group)
   * [QoS config commands](#qos-config-commands)
+* [SAG](#sag)
+  * [SAG Show commands](#sag-show-commands)
+  * [SAG Config commands](#sag-config-commands)
 * [sFlow](#sflow)
   * [sFlow Show commands](#sflow-show-commands)
   * [sFlow Config commands](#sflow-config-commands)
@@ -5228,6 +5231,132 @@ Some of the example QOS configurations that users can modify are given below.
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#qos)
+
+## SAG
+
+### SAG Show commands
+
+**show sag**
+
+This command display the global SAG configuration.
+
+- Usage:
+  ```
+  show sag
+  ```
+
+- Example:
+  ```
+  admin@sonic:~#show sag
+  Static Anycast Gateway Information
+
+  MacAddress         IPv4    IPv6
+  -----------------  ------  ------
+  00:11:22:33:44:55  enable  enable
+  ```
+
+**show sag ip**
+
+This command display the configured SAG IPv4 addresses
+
+- Usage:
+  ```
+  show sag ip
+  ```
+
+- Example:
+  ```
+  admin@sonic~#show sag ip
+  Vlan Interface Name    IPv4 address/mask
+  ---------------------  -------------------
+  Vlan100                1.1.1.254/24
+  ```
+
+**show sag ipv6**
+
+This command display the configured SAG IPv6 addresses
+
+- Usage:
+  ```
+  show sag ipv6
+  ```
+
+- Example:
+  ```
+  admin@sonic~#show sag ipv6
+  Vlan Interface Name    IPv6 address/mask
+  ---------------------  -------------------
+  Vlan100                2001:1000::FE/64
+  ```
+
+### SAG Config commands
+
+**config sag mac_address add/del**
+
+This command is used to add/delete the SAG MAC address.  
+This setting is global and only a single MAC address is allowed.
+
+- Usage:
+  ```
+  config sag mac_address <add|del> <mac-address>
+  ```
+
+  - Parameters:
+    - mac-address: specify the MAC address used for SAG interface
+
+- Example:
+  ```
+  admin@sonic:~# sudo config sag mac_address add 00:11:22:33:44:55
+  admin@sonic:~# sudo config sag mac_address del 00:11:22:33:44:55
+  ```
+
+**config sag ipv4 enable/disable**
+
+This command is used to enable/disable the IPv4 address on the SAG interface.
+
+- Usage:
+  ```
+  config sag ipv4 <enable|disable>
+  ```
+
+- Example:
+  ```
+  admin@sonic:~# sudo config sag ipv4 enable
+  admin@sonic:~# sudo config sag ipv4 disable
+  ```
+
+**config sag ipv6 enable/disable**
+
+This command is used to enable/disable the IPv6 address on the SAG interface.
+
+- Usage:
+  ```
+  config sag ipv6 <enable|disable>
+  ```
+
+- Example:
+  ```
+  admin@sonic:~# sudo config sag ipv6 enable
+  admin@sonic:~# sudo config sag ipv6 disable
+  ```
+
+**config sag interface sag ip add/del**
+
+This command is used to add/del the IPv4/IPv6 address on the SAG interface, and the which VLAN interface that SAG interface is based on.
+
+- Usage:
+  ```
+  config interface sag ip <add|del> <vlan-name> <ip-address>
+  ```
+  - Parameters:
+    - vlan-name: specify the SAG's parent VLAN interface name
+    - ip-address: specify the IPv4/IPv6 address used on the SAG interface
+
+- Example:
+  ```
+  admin@sonic:~# sudo config interface ip add Vlan1 192.168.1.1/24
+  admin@sonic:~# sudo config interface ip del Vlan1 192.168.1.1/24
+  ```
 
 ## sFlow
 
