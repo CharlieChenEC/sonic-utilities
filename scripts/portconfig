@@ -17,6 +17,7 @@ optional arguments:
 """
 from __future__ import print_function
 
+import re
 import sys
 import argparse
 import swsssdk
@@ -51,6 +52,27 @@ class portconfig(object):
     def set_speed(self, port, speed):
         if self.verbose:
             print("Setting speed %s on port %s" % (speed, port))
+
+        cur_brkout_dict = self.db.get_table('BREAKOUT_CFG')
+        port_tables = self.db.get_table(PORT_TABLE_NAME)
+        if cur_brkout_dict and ("parent_port" in port_tables[port]):
+            #get parent port
+            parent_port = port_tables[port]["parent_port"]
+            speed_list=[]
+            cur_brkout_mode = cur_brkout_dict[parent_port]["brkout_mode"]
+            tmp_mode = re.split("[/[]", cur_brkout_mode)
+            (port_num, tmp_speed) = tmp_mode[0].split("x", 1)
+            speed_list.append(tmp_speed)
+
+            if len(tmp_mode) > 1:
+                tmp_list = re.split("[,\]]", tmp_mode[1])
+                for item in tmp_list:
+                    speed_list.append(item)
+
+            conv_speed = "{}G".format(str(speed/1000))
+            if conv_speed not in speed_list:
+               raise Exception("Can't set the port speed.")
+
         self.db.mod_entry(PORT_TABLE_NAME, port, {PORT_SPEED_CONFIG_FIELD_NAME: speed})
 
     def set_fec(self, port, fec):
