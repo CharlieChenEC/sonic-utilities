@@ -2262,7 +2262,7 @@ The list of the WRED profile fields that are configurable is listed in the below
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#ecn)
 
-## Gearbox
+## Gearbox (Not support)
 
 This section explains all the Gearbox PHY show commands that are supported in SONiC.
 
@@ -4519,7 +4519,7 @@ This command shows current PFC Watchdog statistics (storms detected, packets dro
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#pfc-watchdog-commands)
 
-## Platform Component Firmware
+## Platform Component Firmware (Not support)
 
 ### Platform Component Firmware show commands
 
@@ -4724,7 +4724,7 @@ Note: the update will have the same effect if any of CPLD1/CPLD2/CPLD3/CPLD4 wil
 Go Back To [Beginning of the document](#) or [Beginning of this section](#platform-component-firmware)
 
 
-## Platform Specific Commands
+## Platform Specific Commands (Not support)
 
 There are few commands that are platform specific. Mellanox has used this feature and implemented Mellanox specific commands as follows.
 
