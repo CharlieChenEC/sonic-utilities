@@ -6262,8 +6262,8 @@ This command is used to add/del the IPv4/IPv6 address on the SAG interface, and 
 
 - Example:
   ```
-  admin@sonic:~# sudo config interface ip add Vlan1 192.168.1.1/24
-  admin@sonic:~# sudo config interface ip del Vlan1 192.168.1.1/24
+  admin@sonic:~# sudo config sag interface ip add Vlan1 192.168.1.1/24
+  admin@sonic:~# sudo config sag interface ip del Vlan1 192.168.1.1/24
   ```
 
 ## sFlow
