@@ -5826,11 +5826,23 @@ This command displays all the port channels that are configured in the device an
 - Usage:
   ```
   show interfaces portchannel
+  show interfaces portchannel --verbose
   ```
 
 - Example:
   ```
   admin@sonic:~$ show interfaces portchannel
+  Flags: A - active, I - inactive, Up - up, Dw - Down, N/A - not available, S - selected, D - deselected
+    No.  Team Dev       Protocol     Ports
+  -----  -------------  -----------  ---------------------------
+     24  PortChannel24  LACP(A)(Up)  Ethernet28(S) Ethernet24(S)
+     48  PortChannel48  LACP(A)(Up)  Ethernet52(S) Ethernet48(S)
+     40  PortChannel40  LACP(A)(Up)  Ethernet44(S) Ethernet40(S)
+      0  PortChannel0   LACP(A)(Up)  Ethernet0(S) Ethernet4(S)
+      8  PortChannel8   LACP(A)(Up)  Ethernet8(S) Ethernet12(S)
+
+  admin@sonic:~$ show interfaces portchannel --verbose
+  Command: sudo teamshow
   Flags: A - active, I - inactive, Up - up, Dw - Down, N/A - not available, S - selected, D - deselected
     No.  Team Dev       Protocol     Ports
   -----  -------------  -----------  ---------------------------
