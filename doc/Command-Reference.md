@@ -1349,13 +1349,13 @@ This command displays the ARP entries in the device with following options.
 
 - Usage:
   ```
-  show arp [-if <interface_name>] [<ip_address>]
+  show arp [-if|--iface <interface_name>] [<ip_address>]
   ```
 
 - Details:
-  - show arp: Displays all entries
-  - show arp -if <ifname>: Displays the ARP specific to the specified interface.
-  - show arp <ip-address>: Displays the ARP specific to the specicied ip-address.
+  - show arp: Displays all entries.
+  - show arp -if <interface_name>: Displays the entries which associated with the specified interface <interface_name>.
+  - show arp <ip-address>: Displays the entries which associated with the specified address <ip_address>.
 
 
 - Example:
@@ -1410,7 +1410,7 @@ This command displays either all the IPv6 neighbor mac addresses, or for a parti
   show ndp [-if|--iface <interface_name>] <ipv6_address>
   ```
 
-- Example (show all IPv6 neighbors):
+- Example (all IPv6 neighbors):
   ```
   admin@sonic:~$ show ndp
   Address                   MacAddress         Iface    Vlan    Status
@@ -1421,7 +1421,7 @@ This command displays either all the IPv6 neighbor mac addresses, or for a parti
   Total number of entries 3
   ```
 
-- Example (show specific IPv6 neighbor):
+- Example (a specific IPv6 neighbor):
   ```
   admin@sonic:~$ show ndp fe80::20c:29ff:feb8:b11e
   Address                   MacAddress         Iface    Vlan    Status
@@ -1430,7 +1430,7 @@ This command displays either all the IPv6 neighbor mac addresses, or for a parti
   Total number of entries 1
   ```
 
-- Example (show IPv6 neighbors learned on a specific interface):
+- Example (a specific interface):
   ```
   admin@sonic:~$ show ndp -if eth0
   Address                   MacAddress         Iface    Vlan    Status
@@ -4032,47 +4032,50 @@ This command displays either all the route entries from the routing table or a s
 
 - Usage:
   ```
-  show ip route [<vrf-name>] [<ip_address>]
+  show ip route [vrf <vrf-name>] [<ip_address>]
   ```
 
 - Example:
   ```
   admin@sonic:~$ show ip route
   Codes: K - kernel route, C - connected, S - static, R - RIP,
-         O - OSPF, I - IS-IS, B - BGP, P - PIM, A - Babel,
-         > - selected route, * - FIB route
+       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+       T - Table, v - VNC, V - VNC-Direct, A - Babel, D - SHARP,
+       F - PBR, f - OpenFabric,
+       > - selected route, * - FIB route, q - queued route, r - rejected route
+
   S>* 0.0.0.0/0 [200/0] via 10.11.162.254, eth0
   C>* 1.1.0.0/16 is directly connected, Vlan100
   C>* 10.1.1.0/31 is directly connected, Ethernet112
   C>* 10.1.1.2/31 is directly connected, Ethernet116
   C>* 10.11.162.0/24 is directly connected, eth0
-  C>* 127.0.0.0/8 is directly connected, lo
-  C>* 240.127.1.0/24 is directly connected, docker0
   ```
 
-  - Optionally, you can specify an IP address in order to display only routes to that particular IP address
+  - Optionally, specify an IP address to display routes to the particular IP address.
 
 - Example:
   ```
   admin@sonic:~$ show ip route 10.1.1.0
   Routing entry for 10.1.1.0/31
     Known via "connected", distance 0, metric 0, best
+    Last update 00:07:49 ago
     * directly connected, Ethernet112
   ```
 
-  - Vrf-name can also be specified to get IPv4 routes programmed in the vrf.
+  - Specify <vrf_name> to get IPv4 routes programmed in the <vrf_name>.
 
   - Example:
      ```
      admin@sonic:~$ show ip route vrf Vrf-red
-       Codes: K - kernel route, C - connected, S - static, R - RIP,
-       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
-       T - Table, v - VNC, V - VNC-Direct, A - Babel, D - SHARP,
-       F - PBR, f - OpenFabric,
-       > - selected route, * - FIB route
-       VRF Vrf-red:
-       C>*  11.1.1.1/32 is directly connected, Loopback11, 21:50:47
-       C>*  100.1.1.0/24 is directly connected, Vlan100, 03w1d06h
+     Codes: K - kernel route, C - connected, S - static, R - RIP,
+            O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+            T - Table, v - VNC, V - VNC-Direct, A - Babel, D - SHARP,
+            F - PBR, f - OpenFabric,
+            > - selected route, * - FIB route, q - queued route, r - rejected route
+
+     VRF Vrf-red:
+     C>*  11.1.1.1/32 is directly connected, Loopback11, 21:50:47
+     C>*  100.1.1.0/24 is directly connected, Vlan100, 03w1d06h
        
      admin@sonic:~$ show ip route vrf Vrf-red 11.1.1.1/32
        Routing entry for 11.1.1.1/32
@@ -4085,11 +4088,11 @@ This command displays either all the route entries from the routing table or a s
 
 This command displays the details about all the Layer3 IP interfaces in the device for which IP address has been assigned.
 The type of interfaces include the following.
-1) Front panel physical ports.
-2) PortChannel.
-3) VLAN interface.
+1) Front panel physical ports
+2) PortChannel interfaces
+3) VLAN interfaces
 4) Loopback interfaces
-5) docker interface and
+5) docker interface
 6) management interface
 
 - Usage:
@@ -4116,6 +4119,22 @@ The type of interfaces include the following.
   lo                              127.0.0.1/8           up/up           N/A              N/A
   ```
 
+**show ip prefix-list**
+
+This command displays the ip prefix-list.
+
+- Usage:
+  ```
+  show ip prefix-list
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ show ip prefix-list
+  BGP: ip prefix-list PL_LoopbackV4: 1 entries
+     seq 5 permit 10.1.0.32/32
+  ```
+
 **show ip protocol**
 
 This command displays the route-map that is configured for the routing protocol.
@@ -4129,6 +4148,7 @@ Refer the routing stack [Quagga Command Reference](https://www.quagga.net/docs/q
 - Example:
   ```
   admin@sonic:~$ show ip protocol
+  VRF: default
   Protocol    : route-map
   ------------------------
   system      : none
@@ -4142,9 +4162,24 @@ Refer the routing stack [Quagga Command Reference](https://www.quagga.net/docs/q
   isis        : none
   bgp         : RM_SET_SRC
   pim         : none
+  eigrp       : none
+  nhrp        : none
   hsls        : none
   olsr        : none
+  table       : none
+  ldp         : none
+  vnc         : none
+  vnc-direct  : none
+  vnc-rn      : none
+  bgp-direct  : none
+  bgp-direct-to-nve-groups  : none
   babel       : none
+  sharp       : none
+  pbr         : none
+  bfd         : none
+  openfabric  : none
+  vrrp        : none
+  wildcard    : none
   any         : none
   ```
 
@@ -4154,7 +4189,8 @@ This sub-section explains the various IPv6 protocol specific show commands that 
 1) routes
 2) IPv6 bgp details - Explained in the [bgp section](#show-bgp)
 3) IP interfaces
-4) protocol
+4) prefix-list
+5) protocol
 
 **show ipv6 route**
 
@@ -4162,21 +4198,20 @@ This command displays either all the IPv6 route entries from the routing table o
 
 - Usage:
   ```
-  show ipv6 route [<vrf-name>] [<ipv6_address>]
+  show ipv6 route [vrf <vrf-name>] [<ipv6_address>]
   ```
 
 - Example:
   ```
   admin@sonic:~$ show ipv6 route
   Codes: K - kernel route, C - connected, S - static, R - RIPng,
-         O - OSPFv6, I - IS-IS, B - BGP, A - Babel,
-         > - selected route, * - FIB route
+         O - OSPFv3, I - IS-IS, B - BGP, N - NHRP, T - Table,
+         v - VNC, V - VNC-Direct, A - Babel, D - SHARP, F - PBR,
+         f - OpenFabric,
+         > - selected route, * - FIB route, q - queued route, r - rejected route
 
-  C>* ::1/128 is directly connected, lo
   C>* 2018:2001::/126 is directly connected, Ethernet112
   C>* 2018:2002::/126 is directly connected, Ethernet116
-  C>* fc00:1::32/128 is directly connected, lo
-  C>* fc00:1::102/128 is directly connected, lo
   C>* fc00:2::102/128 is directly connected, eth0
   C * fe80::/64 is directly connected, Vlan100
   C * fe80::/64 is directly connected, Ethernet112
@@ -4193,6 +4228,7 @@ This command displays either all the IPv6 route entries from the routing table o
   admin@sonic:~$ show ipv6 route  fc00:1::32
   Routing entry for fc00:1::32/128
     Known via "connected", distance 0, metric 0, best
+    Last update 00:26:02 ago
     * directly connected, lo
   ```
 
@@ -4201,31 +4237,32 @@ This command displays either all the IPv6 route entries from the routing table o
   - Example:
      ```
      admin@sonic:~$ show ipv6 route vrf Vrf-red
-       Codes: K - kernel route, C - connected, S - static, R - RIP,
-       O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
-       T - Table, v - VNC, V - VNC-Direct, A - Babel, D - SHARP,
-       F - PBR, f - OpenFabric,
-       > - selected route, * - FIB route
-       VRF Vrf-red:
-            C>*  1100::1/128 is directly connected, Loopback11, 21:50:47           
-            C>*  100::/112 is directly connected, Vlan100, 03w1d06h
-            C>*  fe80::/64 is directly connected, Loopback11, 21:50:47
-            C>*  fe80::/64 is directly connected, Vlan100, 03w1d06h
+     Codes: K - kernel route, C - connected, S - static, R - RIPng,
+            O - OSPFv3, I - IS-IS, B - BGP, N - NHRP, T - Table,
+            v - VNC, V - VNC-Direct, A - Babel, D - SHARP, F - PBR,
+            f - OpenFabric,
+            > - selected route, * - FIB route, q - queued route, r - rejected route
+
+     VRF Vrf-red:
+     C>*  1100::1/128 is directly connected, Loopback11, 21:50:47
+     C>*  100::/112 is directly connected, Vlan100, 03w1d06h
+     C>*  fe80::/64 is directly connected, Loopback11, 21:50:47
+     C>*  fe80::/64 is directly connected, Vlan100, 03w1d06h
             
-      admin@sonic:~$ show ipv6 route vrf Vrf-red 1100::1/128
-        Routing entry for 1100::1/128
-        Known via "connected", distance 0, metric 0, vrf Vrf-red, best
-        Last update 21:57:53 ago
-        * directly connected, Loopback11
+     admin@sonic:~$ show ipv6 route vrf Vrf-red 1100::1/128
+       Routing entry for 1100::1/128
+       Known via "connected", distance 0, metric 0, vrf Vrf-red, best
+       Last update 21:57:53 ago
+       * directly connected, Loopback11
      ```
 
 **show ipv6 interfaces**
 
 This command displays the details about all the Layer3 IPv6 interfaces in the device for which IPv6 address has been assigned.
 The type of interfaces include the following.
-1) Front panel physical ports.
-2) PortChannel.
-3) VLAN interface.
+1) Front panel physical ports
+2) PortChannel interfaces
+3) VLAN interfaces
 4) Loopback interfaces
 5) management interface
 
@@ -4251,6 +4288,23 @@ The type of interfaces include the following.
   lo                          fc00:1::32/128                             up/up         N/A             N/A
   ```
 
+**show ipv6 prefix-list**
+
+This command displays the ipv6 prefix-list.
+
+- Usage:
+  ```
+  show ipv6 prefix-list
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ show ipv6 prefix-list
+  BGP: ipv6 prefix-list PL_LoopbackV6: 1 entries
+     seq 5 permit fc00:1::/64
+  ```
+
+
 **show ipv6 protocol**
 
 This command displays the route-map that is configured for the IPv6 routing protocol.
@@ -4265,6 +4319,7 @@ Refer the routing stack [Quagga Command Reference](https://www.quagga.net/docs/q
 - Example:
   ```
   admin@sonic:~$ show ipv6 protocol
+  VRF: default
   Protocol    : route-map
   ------------------------
   system      : none
@@ -4276,11 +4331,26 @@ Refer the routing stack [Quagga Command Reference](https://www.quagga.net/docs/q
   ospf        : none
   ospf6       : none
   isis        : none
-  bgp         : RM_SET_SRC6
+  bgp         : none
   pim         : none
+  eigrp       : none
+  nhrp        : none
   hsls        : none
   olsr        : none
+  table       : none
+  ldp         : none
+  vnc         : none
+  vnc-direct  : none
+  vnc-rn      : none
+  bgp-direct  : none
+  bgp-direct-to-nve-groups  : none
   babel       : none
+  sharp       : none
+  pbr         : none
+  bfd         : none
+  openfabric  : none
+  vrrp        : none
+  wildcard    : none
   any         : none
   ```
 
@@ -4553,7 +4623,7 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#loadin
 
 This sub-section explains how to create and delete loopback interfaces.
 
-**config interface loopback**
+**config loopback**
 
 This command is used to add or delete loopback interfaces.
 It is recommended to use loopback names in the format "Loopbackxxx", where "xxx" is number of 1 to 3 digits. Ex: "Loopback11".
@@ -4563,7 +4633,7 @@ It is recommended to use loopback names in the format "Loopbackxxx", where "xxx"
   config loopback (add | del) <loopback_name>
   ```
 
-- Example (Create the loopback with name "Loopback11"):
+- Example:
   ```
   admin@sonic:~$ sudo config loopback add Loopback11
   ```
@@ -8142,6 +8212,7 @@ Ignore Result   : False
   - **ZTP Admin Mode** - Displays if the ZTP feature is administratively enabled or disabled. Possible values are True or False. This value is configurable using "config ztp enabled" and "config ztp disable" commands.
   - **ZTP Service** - Displays the ZTP service status. The following are possible values this field can display:
     - *Active Discovery*: ZTP service is operational and is performing DHCP discovery to learn switch provisioning information
+    - *Inactive*: ZTP service is not running
     - *Processing*: ZTP service has discovered switch provisioning information and is processing it
   - **ZTP Status** - Displays the current state and result of ZTP session. The following are possible values this field can display:
     - *IN-PROGRESS*: ZTP session is currently in progress. ZTP service is processing switch provisioning information.
