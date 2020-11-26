@@ -34,6 +34,9 @@
 * [Container Auto-restart](#container-auto-restart)
   * [Container Auto-restart show commands](#container-auto-restart-show-commands)
   * [Container Auto-restart config command](#container-auto-restart-config-command)
+* [Critical Resource Monitoring](#critical-resource-monitoring)
+  * [CRM show commands](#crm-show-commands)
+  * [CRM config command](#crm-config-command)
 * [DHCP Relay](#dhcp-relay)
   * [DHCP Relay config commands](#dhcp-relay-config-commands)
 * [Drop Counters](#drop-counters)
@@ -183,8 +186,7 @@ It is assumed that all configuration commands start with the keyword “config�
 Any other scripts/utilities/commands  that need user configuration control are wrapped as sub-commands under the “config” command.
 The direct scripts/utilities/commands (examples given below) that are not wrapped under the "config" command are not in the scope of this document.
   1. acl_loader – This script is already wrapped inside “config acl” command; i.e. any ACL configuration that user is allowed to do is already part of “config acl” command; users are not expected to use the acl_loader script directly and hence this document need not explain the “acl_loader” script.
-  2. crm – this command is not explained in this document.
-  3. sonic-clear, sfputil, etc., This document does not explain these scripts also.
+  2. sonic-clear, sfputil, etc., This document does not explain these scripts also.
 
 ## Basic Tasks
 
@@ -1962,6 +1964,912 @@ This command will configure the status of auto-restart feature for a specific co
   ``` 
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#container-auto-restart)
+
+
+## Critical Resource Monitoring
+
+
+### CRM show commands
+
+**crm show**
+
+Display the usage of show command
+
+- Usage:
+
+  ```
+  admin@sonic:~$ crm show ?
+  Usage: crm show [OPTIONS] COMMAND [ARGS]...
+
+    Show CRM related information
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    resources   Show CRM resources information
+    summary     Show CRM general information
+    thresholds  Show CRM thresholds information
+
+  ```
+
+**crm show summary**
+
+Display polling interval setting
+
+- Example:
+  ```
+  admin@sonic:~$ crm show summary
+
+  Polling Interval: 300 second(s)
+  ```
+
+**crm show resources**
+
+Display the usage of show resources command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm show resources
+  Usage: crm show resources [OPTIONS] COMMAND [ARGS]...
+
+    Show CRM resources information
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    acl      Show CRM information for acl resource
+    all      Show CRM information for all resources
+    fdb      Show CRM information for fdb resource
+    ipv4     CRM resource IPv4 address family
+    ipv6     CRM resource IPv6 address family
+    nexthop  Show CRM information for nexthop resource
+  ```
+
+**crm show resources all**
+
+Display all statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources all
+
+
+  Resource Name           Used Count    Available Count
+  --------------------  ------------  -----------------
+  ipv4_route                      66              98238
+  ipv6_route                      68              16316
+  ipv4_nexthop                     0              49150
+  ipv6_nexthop                     0              49150
+  ipv4_neighbor                    0               8192
+  ipv6_neighbor                    0               4096
+  nexthop_group_member             0              16384
+  nexthop_group                    0                128
+  fdb_entry                        0              32768
+
+
+
+
+  Stage    Bind Point    Resource Name      Used Count    Available Count
+  -------  ------------  ---------------  ------------  -----------------
+  INGRESS  PORT          acl_group                  32                224
+  INGRESS  PORT          acl_table                   3                  2
+  INGRESS  LAG           acl_group                   0                224
+  INGRESS  LAG           acl_table                   0                  2
+  INGRESS  VLAN          acl_group                   0                224
+  INGRESS  VLAN          acl_table                   0                  5
+  INGRESS  RIF           acl_group                   0                224
+  INGRESS  RIF           acl_table                   0                  5
+  INGRESS  SWITCH        acl_group                   0                224
+  INGRESS  SWITCH        acl_table                   0                  5
+  EGRESS   PORT          acl_group                   0                224
+  EGRESS   PORT          acl_table                   0                  2
+  EGRESS   LAG           acl_group                   0                224
+  EGRESS   LAG           acl_table                   0                  2
+  EGRESS   VLAN          acl_group                   0                224
+  EGRESS   VLAN          acl_table                   0                  2
+  EGRESS   RIF           acl_group                   0                224
+  EGRESS   RIF           acl_table                   0                  2
+  EGRESS   SWITCH        acl_group                   0                224
+  EGRESS   SWITCH        acl_table                   0                  2
+
+
+
+
+  Table ID         Resource Name      Used Count    Available Count
+  ---------------  ---------------  ------------  -----------------
+  0x7000000000a20  acl_entry                   2               6142
+  0x7000000000a20  acl_counter                 2               6142
+  ```
+
+**crm show resources acl**
+
+Display the usage of ACL resources show command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm show resources acl
+  Usage: crm show resources acl [OPTIONS] COMMAND [ARGS]...
+
+    Show CRM information for acl resource
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    group  Show CRM information for acl group resource
+    table  Show CRM information for acl table resource
+  ```
+
+**crm show resources acl group**
+
+Display ACL group statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources acl group
+
+
+  Stage    Bind Point    Resource Name      Used Count    Available Count
+  -------  ------------  ---------------  ------------  -----------------
+  INGRESS  PORT          acl_group                  32                224
+  INGRESS  PORT          acl_table                   2                  3
+  INGRESS  LAG           acl_group                   0                224
+  INGRESS  LAG           acl_table                   0                  3
+  INGRESS  VLAN          acl_group                   0                224
+  INGRESS  VLAN          acl_table                   0                  6
+  INGRESS  RIF           acl_group                   0                224
+  INGRESS  RIF           acl_table                   0                  6
+  INGRESS  SWITCH        acl_group                   0                224
+  INGRESS  SWITCH        acl_table                   0                  6
+  EGRESS   PORT          acl_group                   0                224
+  EGRESS   PORT          acl_table                   0                  2
+  EGRESS   LAG           acl_group                   0                224
+  EGRESS   LAG           acl_table                   0                  2
+  EGRESS   VLAN          acl_group                   0                224
+  EGRESS   VLAN          acl_table                   0                  2
+  EGRESS   RIF           acl_group                   0                224
+  EGRESS   RIF           acl_table                   0                  2
+  EGRESS   SWITCH        acl_group                   0                224
+  EGRESS   SWITCH        acl_table                   0                  2
+  ```
+
+**crm show resources acl table**
+
+Display ACL table statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources acl table
+
+
+  Table ID         Resource Name      Used Count    Available Count
+  ---------------  ---------------  ------------  -----------------
+  0x7000000000a20  acl_entry                   2               6142
+  0x7000000000a20  acl_counter                 2               6142
+  ```
+
+**crm show resources fdb**
+
+Display FDB statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources fdb
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  fdb_entry                   0              32768
+  ```
+
+**crm show resources ipv4**
+
+Display the usage of IPv4 resources show command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm show resources ipv4
+  Usage: crm show resources ipv4 [OPTIONS] COMMAND [ARGS]...
+
+    CRM resource IPv4 address family
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    neighbor  Show CRM information for neighbor resource
+    nexthop   Show CRM information for nexthop resource
+    route     Show CRM information for route resource
+  ```
+
+**crm show resources ipv4 neighbor**
+
+Display IPv4 neighbor statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv4
+  Usage: crm show resources ipv4 [OPTIONS] COMMAND [ARGS]...
+
+    CRM resource IPv4 address family
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    neighbor  Show CRM information for neighbor resource
+    nexthop   Show CRM information for nexthop resource
+    route     Show CRM information for route resource
+  admin@as5812-54x:~$ crm show resources ipv4 neighbor
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv4_neighbor               0               8192
+  ```
+
+**crm show resources ipv4 nexthop**
+
+Display IPv4 nexthop statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv4 nexthop
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv4_nexthop                0              49118
+  ```
+
+**crm show resources ipv4 route**
+
+Display IPv4 route statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv4 route
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv4_route                 66              98238
+  ```
+
+**crm show resources ipv6**
+
+Display the usage of IPv6 resources show command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm show resources ipv6
+  Usage: crm show resources ipv6 [OPTIONS] COMMAND [ARGS]...
+
+    CRM resource IPv6 address family
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    neighbor  Show CRM information for neighbor resource
+    nexthop   Show CRM information for nexthop resource
+    route     Show CRM information for route resource
+  ```
+
+**crm show resources ipv6 neighbor**
+
+Display IPv6 neighbor statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv6 neighbor
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv6_neighbor              33               4096
+  ```
+
+**crm show resources ipv6 nexthop**
+
+Display IPv6 nexthop statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv6 nexthop
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv6_nexthop               33              49117
+  ```
+
+**crm show resources ipv6 route**
+
+Display IPv6 route statistic which include used by all components and available resources in the ASIC
+
+- Usage:
+  ```
+  config aaa authentication fallback (enable | disable | default)
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources ipv6 route
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  ipv6_route                 68              16316
+  ```
+
+**crm show resources nexthop group**
+
+Display the usage of nexthop group resources show command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm show resources nexthop group
+  Usage: crm show resources nexthop group [OPTIONS] COMMAND [ARGS]...
+
+    Show CRM information for nexthop group resource
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    member  Show CRM information for nexthop group member resource
+    object  Show CRM information for nexthop group resource
+  ```
+
+**crm show resources nexthop group member**
+
+Display nexthop group member statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources nexthop group member
+
+
+  Resource Name           Used Count    Available Count
+  --------------------  ------------  -----------------
+  nexthop_group_member             0              16384
+  ```
+
+**crm show resources nexthop group object**
+
+Display nexthop group object statistic which include used by all components and available resources in the ASIC
+
+- Example:
+  ```
+  admin@sonic:~$ crm show resources nexthop group object
+
+
+  Resource Name      Used Count    Available Count
+  ---------------  ------------  -----------------
+  nexthop_group               0                128
+  ```
+
+### CRM config command
+
+Config command should be extended in order to add "crm" alias to the CRM utility.
+
+**crm config**
+
+Display the usage of config command
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config
+  Usage: crm config [OPTIONS] COMMAND [ARGS]...
+
+    CRM related configuration
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    polling     CRM polling configuration
+    thresholds  CRM thresholds configuration
+  ```
+
+**crm config polling interval <value>**
+
+Configure the polling interval to fetch available resources from ASIC
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config polling interval
+  Usage: crm config polling interval [OPTIONS] INTERVAL
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config polling interval 400
+  ```
+
+**crm config thresholds**
+
+Display the usage of config thresholds command
+
+- Usage:
+  ```
+  admin@as5812-54x:~$ crm config thresholds
+  Usage: crm config thresholds [OPTIONS] COMMAND [ARGS]...
+
+    CRM thresholds configuration
+
+  Options:
+    --help  Show this message and exit.
+
+  Commands:
+    acl      CRM configuration for ACL resource
+    fdb      CRM configuration for FDB resource
+    ipv4     CRM resource IPv4 address-family
+    ipv6     CRM resource IPv6 address-family
+    nexthop  CRM configuration for nexthop resource
+  ```
+
+**crm config thresholds acl group counter type <value>**
+
+Configure threshold type of ACL group
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds acl group type
+  Usage: crm config thresholds acl group type [OPTIONS] [percentage|used|free]
+  Try "crm config thresholds acl group type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds acl group type percentage
+  admin@sonic:~$ crm config thresholds acl group type used
+  admin@sonic:~$ crm config thresholds acl group type free
+  ```
+
+
+**crm config thresholds acl group counter low|high <value>**
+
+Configure low|high threshold of ACL group
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds acl group low
+  Usage: crm config thresholds acl group low [OPTIONS] VALUE
+  Try "crm config thresholds acl group low --help" for help.
+
+  admin@sonic:~$ crm config thresholds acl group high
+  Usage: crm config thresholds acl group high [OPTIONS] VALUE
+  Try "crm config thresholds acl group high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds acl group high 90
+
+  admin@sonic:~$ crm config thresholds acl group low 10
+  ```
+
+
+**crm config thresholds acl table type <value>**
+
+Configure threshold type of ACL table
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds acl table type
+  Usage: crm config thresholds acl table type [OPTIONS] [percentage|used|free]
+  Try "crm config thresholds acl table type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds acl table type percentage
+  admin@sonic:~$ crm config thresholds acl table type used
+  admin@sonic:~$ crm config thresholds acl table type free
+  ```
+
+
+**crm config thresholds acl table low|high <value>**
+
+Configure low|high threshold of ACL table
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds acl table low
+  Usage: crm config thresholds acl table low [OPTIONS] VALUE
+  Try "crm config thresholds acl table low --help" for help.
+
+  admin@sonic:~$ crm config thresholds acl table high
+  Usage: crm config thresholds acl table high [OPTIONS] VALUE
+  Try "crm config thresholds acl table high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds acl table low 3
+
+  admin@sonic:~$ crm config thresholds acl table high 80
+  ```
+
+
+**crm config thresholds fdb type <value>**
+
+Configure threshold type of FDB
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds fdb type
+  Usage: crm config thresholds fdb type [OPTIONS] [percentage|used|free]
+  Try "crm config thresholds fdb type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds fdb type percentage
+  admin@sonic:~$ crm config thresholds fdb type used
+  admin@sonic:~$ crm config thresholds fdb type free
+  ```
+
+
+**crm config thresholds fdb low|high <value>**
+
+Configure low|high threshold of FDB
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds fdb low
+  Usage: crm config thresholds fdb low [OPTIONS] VALUE
+  Try "crm config thresholds fdb low --help" for help.
+
+  admin@sonic:~$ crm config thresholds fdb high
+  Usage: crm config thresholds fdb high [OPTIONS] VALUE
+  Try "crm config thresholds fdb high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds fdb low 20
+  admin@sonic:~$ crm config thresholds fdb high 311111
+  ```
+
+
+**crm config thresholds ipv4 neighbor type <value>**
+
+Configure threshold type of IPv4 neighbor
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 neighbor type
+  Usage: crm config thresholds ipv4 neighbor type [OPTIONS]
+                                                  [percentage|used|free]
+  Try "crm config thresholds ipv4 neighbor type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 neighbor type percentage
+  admin@sonic:~$ crm config thresholds ipv4 neighbor type used
+  admin@sonic:~$ crm config thresholds ipv4 neighbor type free
+  ```
+
+
+**crm config thresholds ipv4 neighbor low|high <value>**
+
+Configure low|high threshold of IPv4 neighbor
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 neighbor low
+  Usage: crm config thresholds ipv4 neighbor low [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 neighbor low --help" for help.
+
+
+  admin@sonic:~$ crm config thresholds ipv4 neighbor high
+  Usage: crm config thresholds ipv4 neighbor high [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 neighbor high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 neighbor low 2
+  admin@sonic:~$ crm config thresholds ipv4 neighbor high 5566
+  ```
+
+
+**crm config thresholds ipv4 nexthop type <value>**
+
+Configure threshold type of IPv4 nexthop
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 nexthop type
+  Usage: crm config thresholds ipv4 nexthop type [OPTIONS]
+                                                [percentage|used|free]
+  Try "crm config thresholds ipv4 nexthop type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 nexthop type percentage
+  admin@sonic:~$ crm config thresholds ipv4 nexthop type free
+  admin@sonic:~$ crm config thresholds ipv4 nexthop type used
+  ```
+
+
+**crm config thresholds ipv4 nexthop low|high <value>**
+
+Configure low|high threshold of IPv4 nexthop
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 nexthop low
+  Usage: crm config thresholds ipv4 nexthop low [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 nexthop low --help" for help.
+
+  admin@sonic:~$ crm config thresholds ipv4 nexthop high
+  Usage: crm config thresholds ipv4 nexthop high [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 nexthop high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 nexthop high 90
+  admin@sonic:~$ crm config thresholds ipv4 nexthop high 9000000
+  ```
+
+
+**crm config thresholds ipv4 route type <value>**
+
+Configure threshold type of IPv4 route
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 route type
+  Usage: crm config thresholds ipv4 route type [OPTIONS] [percentage|used|free]
+  Try "crm config thresholds ipv4 route type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 route type percentage
+  admin@sonic:~$ crm config thresholds ipv4 route type used
+  admin@sonic:~$ crm config thresholds ipv4 route type free
+  ```
+
+
+**crm config thresholds ipv4 route low|high <value>**
+
+Configure low|high threshold of IPv4 route
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 route low
+  Usage: crm config thresholds ipv4 route low [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 route low --help" for help.
+
+  admin@sonic:~$ crm config thresholds ipv4 route high
+  Usage: crm config thresholds ipv4 route high [OPTIONS] VALUE
+  Try "crm config thresholds ipv4 route high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv4 route low 11
+  admin@sonic:~$ crm config thresholds ipv4 route high 800000
+  ```
+
+**crm config thresholds ipv6 neighbor type <value>**
+
+Configure threshold type of IPv6 neighbor
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 neighbor type
+  Usage: crm config thresholds ipv6 neighbor type [OPTIONS]
+                                                  [percentage|used|free]
+  Try "crm config thresholds ipv6 neighbor type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 neighbor type percentage
+  admin@sonic:~$ crm config thresholds ipv6 neighbor type used
+  admin@sonic:~$ crm config thresholds ipv6 neighbor type free
+  ```
+
+
+**crm config thresholds ipv6 neighbor low|high <value>**
+
+Configure low|high threshold of IPv6 neighbor
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 neighbor low
+  Usage: crm config thresholds ipv6 neighbor low [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 neighbor low --help" for help.
+
+  admin@sonic:~$ crm config thresholds ipv6 neighbor high
+  Usage: crm config thresholds ipv6 neighbor high [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 neighbor high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 neighbor low 100
+  admin@sonic:~$ crm config thresholds ipv6 neighbor high 50000
+  ```
+
+
+**crm config thresholds ipv6 nexthop type <value>**
+
+Configure threshold type of IPv6 nexthop
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 nexthop type
+  Usage: crm config thresholds ipv6 nexthop type [OPTIONS]
+                                                [percentage|used|free]
+  Try "crm config thresholds ipv6 nexthop type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 nexthop type percentage
+  admin@sonic:~$ crm config thresholds ipv6 nexthop type used
+  admin@sonic:~$ crm config thresholds ipv6 nexthop type free
+  ```
+
+**crm config thresholds ipv6 nexthop low|high <value>**
+
+Configure low|high threshold of IPv6 nexthop
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 nexthop low
+  Usage: crm config thresholds ipv6 nexthop low [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 nexthop low --help" for help.
+
+  admin@sonic:~$ crm config thresholds ipv6 nexthop high
+  Usage: crm config thresholds ipv6 nexthop high [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 nexthop high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 nexthop low 10
+  admin@sonic:~$ crm config thresholds ipv6 nexthop high 80000
+  ```
+
+
+**crm config thresholds ipv6 route type <value>**
+
+Configure threshold type of IPv6 route
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 route type
+  Usage: crm config thresholds ipv6 route type [OPTIONS] [percentage|used|free]
+  Try "crm config thresholds ipv6 route type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 route type percentage
+  admin@sonic:~$ crm config thresholds ipv6 route type used
+  admin@sonic:~$ crm config thresholds ipv6 route type free
+  ```
+
+
+**crm config thresholds ipv6 route low|high <value>**
+
+Configure low|high threshold of IPv6 route
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 route low
+  Usage: crm config thresholds ipv6 route low [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 route low --help" for help.
+
+  admin@sonic:~$ crm config thresholds ipv6 route high
+  Usage: crm config thresholds ipv6 route high [OPTIONS] VALUE
+  Try "crm config thresholds ipv6 route high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds ipv6 route low 100
+  admin@sonic:~$ crm config thresholds ipv6 route low 80000
+  ```
+
+
+**crm config thresholds nexthop group member type <value>**
+
+Configure threshold type of nexthop group member
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group member type
+  Usage: crm config thresholds nexthop group member type [OPTIONS]
+                                                        [percentage|used|free]
+  Try "crm config thresholds nexthop group member type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group member type percentage
+  admin@sonic:~$ crm config thresholds nexthop group member type used
+  admin@sonic:~$ crm config thresholds nexthop group member type free
+  ```
+
+
+**crm config thresholds nexthop group member low|high <value>**
+
+Configure low|high threshold of nexthop group member
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group member low
+  Usage: crm config thresholds nexthop group member low [OPTIONS] VALUE
+  Try "crm config thresholds nexthop group member low --help" for help.
+
+  admin@sonic:~$ crm config thresholds nexthop group member high
+  Usage: crm config thresholds nexthop group member high [OPTIONS] VALUE
+  Try "crm config thresholds nexthop group member high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group member low 1000
+  admin@sonic:~$ crm config thresholds nexthop group member high 12345
+  ```
+
+
+**crm config thresholds nexthop group object type <value>**
+
+Configure threshold type of nexthop group object
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group object type
+  Usage: crm config thresholds nexthop group object type [OPTIONS]
+                                                        [percentage|used|free]
+  Try "crm config thresholds nexthop group object type --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group object type percentage
+  admin@sonic:~$ crm config thresholds nexthop group object type used
+  admin@sonic:~$ crm config thresholds nexthop group object type free
+  ```
+
+
+**crm config thresholds nexthop group object low|high <value>**
+
+Configure threshold type of nexthop group object
+
+- Usage:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group object low
+  Usage: crm config thresholds nexthop group object low [OPTIONS] VALUE
+  Try "crm config thresholds nexthop group object low --help" for help.
+
+  admin@sonic:~$ crm config thresholds nexthop group object high
+  Usage: crm config thresholds nexthop group object high [OPTIONS] VALUE
+  Try "crm config thresholds nexthop group object high --help" for help.
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ crm config thresholds nexthop group object low 100
+  admin@sonic:~$ crm config thresholds nexthop group object high 2000
+  ```
+
+Go Back To [Beginning of the document](#) or [Beginning of this section](#critical-resource-monitoring)
 
 ## DHCP Relay
 
