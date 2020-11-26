@@ -246,11 +246,8 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#basic-
 ## Getting Help
 
 Subsections:
-  1. [Help for Config Commands](#Config-Help)
-  2. [Help for Show Commands](#Show-Help)
-  3. [Show Versions](#Show-Versions)
-  4. [Show System Status](#Show-System-Status)
-  5. [Show Hardware Platform](#Show-Hardware-Platform)
+  1. [Help for Config Commands](#help-for-config-commands)
+  2. [Help for Show Commands](#help-for-show-commands)
 
 ### Help for Config Commands
 
@@ -263,50 +260,67 @@ This command lists all the possible configuration commands at the top level.
 
 - Usage:
   ```
-  config --help
+  config (-?|-h|--help)
   ```
 
 - Example:
   ```
   admin@sonic:~$ config --help
-  Usage: config [OPTIONS] COMMAND [ARGS]
-  SONiC command line - 'config' command
+  Usage: config [OPTIONS] COMMAND [ARGS]...
+
+    SONiC command line - 'config' command
 
   Options:
-    --help  Show this message and exit.
+    -?, -h, --help  Show this message and exit.
 
   Commands:
-    aaa                    AAA command line
-    acl                    ACL-related configuration tasks
-    bgp                    BGP-related configuration tasks
-    ecn                    ECN-related configuration tasks
-    hostname               Change device hostname without impacting traffic
-    interface              Interface-related configuration tasks
-    interface_naming_mode  Modify interface naming mode for interacting...
-    load                   Import a previous saved config DB dump file.
-    load_mgmt_config       Reconfigure hostname and mgmt interface based...
-    load_minigraph         Reconfigure based on minigraph.
-    loopback               Loopback-related configuration tasks.
+    aaa                     AAA command line
+    acl                     ACL-related configuration tasks
+    bgp                     BGP-related configuration tasks
+    container               Modify configuration of containers
+    dropcounters            Drop counter related configuration tasks
+    ecn                     ECN-related configuration tasks
+    feature                 Configure status of feature
+    hostname                Change device hostname without impacting the...
+    interface               Interface-related configuration tasks
+    interface_naming_mode   Modify interface naming mode for interacting with...
+    is-loopback-name-valid  Loopback name validation
+    kdump                   Configure kdump
+    load                    Import a previous saved config DB dump file.
+    load_mgmt_config        Reconfigure hostname and mgmt interface based on...
+    load_minigraph          Reconfigure based on minigraph.
+    loopback                Loopback-related configuration tasks
+    mclag                   Multi-Chassis Link Aggregation Group-related...
     mirror_session
-    nat                    NAT-related configuration tasks
-    platform               Platform-related configuration tasks
+    nat                     NAT-related configuration tasks
+    neigh_suppress          Neighbour Suppress VLAN-related configuration
+    ntp                     NTP server configuration tasks
+    pfcwd                   Configure pfc watchdog
+    platform                Platform-related configuration tasks
     portchannel
-    qos
-    reload                 Clear current configuration and import a...
-    route                  route-related configuration tasks
-    save                   Export current config DB to a file on disk.
-    tacacs                 TACACS+ server configuration
-    vlan                   VLAN-related configuration tasks
-    vrf                    VRF-related configuration tasks
-    warm_restart           warm_restart-related configuration tasks
-    watermark              Configure watermark
-    container              Modify configuration of containers
+    pvlan                   Private VLAN-related configuration tasks
+    qos                     QoS-related configuration tasks
+    reload                  Clear current configuration and import a previous...
+    route                   route-related configuration tasks
+    sag                     Static Anycast Gateway
+    save                    Export current config DB to a file on disk.
+    sflow                   sFlow-related configuration tasks
+    snmpagentaddress        SNMP agent listening IP address, port, vrf...
+    snmptrap                SNMP Trap server configuration to send traps
+    syslog                  Syslog server configuration tasks
+    tacacs                  TACACS+ server configuration
+    vlan                    VLAN-related configuration tasks
+    vrf                     VRF-related configuration tasks
+    vxlan
+    warm_restart            warm_restart-related configuration tasks
+    watermark               Configure watermark
+    ztp                     Configure Zero Touch Provisioning
   ```
 Go Back To [Beginning of the document](#) or [Beginning of this section](#getting-help)
 
-### Help For Show Commands
+### Help for Show Commands
 
-**show help**
+**show --help**
 
 This command displays the full list of show commands available in the software; the output of each of those show commands can be used to analyze, debug or troubleshoot the network node.
 
@@ -317,8 +331,9 @@ This command displays the full list of show commands available in the software; 
 
 - Example:
   ```
-  admin@sonic:~$ show -?
+  admin@sonic:~$ show --help
   Usage: show [OPTIONS] COMMAND [ARGS]...
+
     SONiC command line - 'show' command
 
   Options:
@@ -328,31 +343,50 @@ This command displays the full list of show commands available in the software; 
     aaa                   Show AAA configuration
     acl                   Show ACL related information
     arp                   Show IP ARP table
+    boot                  Show boot configuration
+    buffer_pool           Show details of the buffer pools
     clock                 Show date and time
+    container             Show container
+    dropcounters          Show drop counter related information
     ecn                   Show ECN configuration
     environment           Show environmentals (voltages, fans, temps)
+    features              Show status of optional features
     interfaces            Show details of the network interfaces
     ip                    Show IP (IPv4) commands
     ipv6                  Show IPv6 commands
+    kdump                 Show kdump configuration, status and information
     line                  Show all /dev/ttyUSB lines and their info
-    lldp                  LLDP (Link Layer Discovery Protocol)...
+    lldp                  LLDP (Link Layer Discovery Protocol) information
     logging               Show system log
     mac                   Show MAC (FDB) entries
+    management_interface  Show management interface parameters
+    mclag                 Show MCLAG related information
+    mgmt-vrf              Show management VRF attributes
     mirror_session        Show existing everflow sessions
     mmu                   Show mmu configuration
     nat                   Show details of the nat
     ndp                   Show IPv6 Neighbour table
+    neigh-suppress        show neigh_suppress
     ntp                   Show NTP information
-    pfc                   Show details of the priority-flow-control...
+    pfc                   Show details of the priority-flow-control (pfc)
+    pfcwd                 Show details of the pfc watchdog
+    pim                   Show details of the pims
     platform              Show platform-specific hardware info
+    policer               Show existing policers
     priority-group        Show details of the PGs
     processes             Display process information
+    pvlan                 Show Private VLAN related information
     queue                 Show details of the queues
     reboot-cause          Show cause of most recent reboot
     route-map             show route-map
-    runningconfiguration  Show current running configuration...
+    runningconfiguration  Show current running configuration information
+    sag                   show sag information
     services              Show all daemon services
+    sflow                 Show sFlow related information
+    snmpagentaddress      Show SNMP agent listening IP address configuration
+    snmptrap              Show SNMP agent Trap server configuration
     startupconfiguration  Show startup configuration information
+    subinterfaces         Show details of the sub port interfaces
     system-memory         Show memory information
     tacacs                Show TACACS+ configuration
     techsupport           Gather information for troubleshooting
@@ -360,17 +394,20 @@ This command displays the full list of show commands available in the software; 
     users                 Show users
     version               Show version information
     vlan                  Show VLAN information
+    vnet                  Show vnet related information
     vrf                   Show vrf config
+    vxlan                 Show VXLAN information
     warm_restart          Show warm restart configuration and state
     watermark             Show details of watermark
-    container             Show details of container
+    ztp                   Show Zero Touch Provisioning status
   ```
 
 The same syntax applies to all subgroups of `show` which themselves contain subcommands, and subcommands which accept options/arguments.
 
 - Example:
   ```
-  admin@sonic:~$ show interfaces -?
+  admin@sonic:~$ show interface -?
+  Usage: show interface [OPTIONS] COMMAND [ARGS]...
 
     Show details of the network interfaces
 
@@ -378,8 +415,10 @@ The same syntax applies to all subgroups of `show` which themselves contain subc
     -?, -h, --help  Show this message and exit.
 
   Commands:
+    alias        Show Interface Name/Alias Mapping
+    breakout     Show Breakout Mode information by interfaces
     counters     Show interface counters
-    description  Show interface status, protocol and...
+    description  Show interface status, protocol and description
     naming_mode  Show interface naming_mode status
     neighbor     Show neighbor related information
     portchannel  Show PortChannel information
