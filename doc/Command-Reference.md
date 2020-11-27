@@ -1485,27 +1485,25 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#arp--n
 
 ## BGP
 
-This section explains all the BGP show commands and BGP configuation commands in both "Quagga" and "FRR" routing software that are supported in SONiC.
-In 201811 and older verisons "Quagga" was enabled by default. In current version "FRR" is enabled by default.
-Most of the FRR show commands start with "show bgp". Similar commands in Quagga starts with "show ip bgp". All sub-options supported in all these show commands are common for FRR and Quagga.
-Detailed show commands examples for Quagga are provided at the end of this document.This section captures only the commands supported by FRR.
+This section explains all the BGP show commands and BGP configuration commands in both "Quagga" and "FRR" routing software that are supported in SONiC. In 201811 and older versions "Quagga" was enabled by default. In current version "FRR" is enabled by default.
+Most of the FRR show commands start with "show bgp" (201904 - 201911) or "show ip bgp" (after 202006). Similar commands in Quagga starts with "show ip bgp". All sub-options supported in all these show commands are common for FRR and Quagga. Detailed show commands examples for Quagga are provided at the end of this document. This section captures only the commands supported by FRR.
 
 ### BGP show commands
 
 
-**show bgp summary (Versions >= 201904 using default FRR routing stack)**
+**show bgp summary (201904 <= Versions <=201911 using default FRR routing stack)**
 
-**show ip bgp summary (Versions <= 201811 using Quagga routing stack)**
+**show ip bgp summary (Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack)**
 
 This command displays the summary of all IPv4 & IPv6 bgp neighbors that are configured and the corresponding states.
 
 - Usage:
 
-  *Versions >= 201904 using default FRR routing stack*
+  *201904 <= Versions <= 201911 using default FRR routing stack*
   ```
   show bgp summary
   ```
-  *Versions <= 201811 using Quagga routing stack*
+  *Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack*
   ```
   show ip bgp summary
   ```
@@ -1516,16 +1514,16 @@ This command displays the summary of all IPv4 & IPv6 bgp neighbors that are conf
 
   IPv4 Unicast Summary:
   BGP router identifier 10.1.0.32, local AS number 65100 vrf-id 0
-  BGP table version 6465
-  RIB entries 12807, using 2001 KiB of memory
-  Peers 4, using 83 KiB of memory
-  Peer groups 2, using 128 bytes of memory
+  BGP table version 12770
+  RIB entries 12807, using 2301 KiB of memory
+  Peers 4, using 82 KiB of memory
+  Peer groups 6, using 384 bytes of memory
 
-  Neighbor        V         AS MsgRcvd MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd NeighborName
-  10.0.0.57       4      64600    3995    4001        0    0    0 00:39:32         6400 Lab-T1-01
-  10.0.0.59       4      64600    3995    3998        0    0    0 00:39:32         6400 Lab-T1-02
-  10.0.0.61       4      64600    3995    4001        0    0    0 00:39:32         6400 Lab-T1-03
-  10.0.0.63       4      64600    3995    3998        0    0    0 00:39:32         6400 NotAvailable
+  Neighbor        V         AS MsgRcvd MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd   NeighborName
+  10.0.0.57       4      64600    3346    4494        0    0    0 00:07:09         6400   ARISTA01T1
+  10.0.0.59       4      64600    3346    4494        0    0    0 00:07:09         6400   ARISTA02T1
+  10.0.0.61       4      64600    3348    4493        0    0    0 00:07:09         6400   ARISTA03T1
+  10.0.0.63       4      64600    3347    4493        0    0    0 00:07:09         6400   ARISTA04T1
 
   Total number of neighbors 4
   ```
@@ -1564,13 +1562,13 @@ This command displays the summary of all IPv4 & IPv6 bgp neighbors that are conf
 
   Total number of neighbors 4
   ```
-  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp summary" for Quagga.
+  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp summary" for Quagga or FRR after 202006.
 
 
 
-**show bgp neighbors (Versions >= 201904 using default FRR routing stack)**
+**show bgp neighbors (201904 <= Versions <=201911 using default FRR routing stack)**
 
-**show ip bgp neighbors (Versions <= 201811 using Quagga routing stack)**
+**show ip bgp neighbors (Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack)**
 
 This command displays all the details of IPv4 & IPv6 BGP neighbors when no optional argument is specified.
 
@@ -1583,11 +1581,11 @@ In order to get details for an IPv6 neigbor, use "show bgp ipv6 neighbor <ipv6_a
 
 - Usage:
 
-  *Versions >= 201904 using default FRR routing stack*
+  *201904 <= Versions <=201911 using default FRR routing stack*
   ```
   show bgp neighbors [<ipv4-address> [advertised-routes | received-routes | routes]]
   ```
-  *Versions <= 201811 using Quagga routing stack*
+  *Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack*
   ```
   show ip bgp neighbors [<ipv4-address> [advertised-routes | received-routes | routes]]
   ```
@@ -1653,15 +1651,137 @@ Optionally, you can specify an IP address in order to display only that particul
 - Example:
   ```
   admin@sonic:~$ show bgp neighbors 10.0.0.57
+  BGP neighbor is 10.0.0.57, remote AS 64600, local AS 65100, external link
+   Description: ARISTA01T1
+   Member of peer-group PEER_V4 for session parameters
+    BGP version 4, remote router ID 100.1.0.29, local router ID 10.1.0.32
+    BGP state = Established, up for 00:04:24
+    Last read 00:00:00, Last write 00:00:01
+    Hold time is 10, keepalive interval is 3 seconds
+    Configured hold time is 10, keepalive interval is 3 seconds
+    Neighbor capabilities:
+      4 Byte AS: advertised and received
+      AddPath:
+        IPv4 Unicast: RX advertised IPv4 Unicast and received
+      Route refresh: advertised and received(new)
+      Address Family IPv4 Unicast: advertised and received
+      Hostname Capability: advertised (name: as7726-32x-1,domain name: n/a) not received
+      Graceful Restart Capabilty: advertised and received
+        Remote Restart timer is 300 seconds
+        Address families by peer:
+          none
+    Graceful restart information:
+      End-of-RIB send: IPv4 Unicast
+      End-of-RIB received: IPv4 Unicast
+    Message statistics:
+      Inq depth is 0
+      Outq depth is 0
+                           Sent       Rcvd
+      Opens:                  2          1
+      Notifications:          2          0
+      Updates:             4228       3202
+      Keepalives:            89         88
+      Route Refresh:          0          0
+      Capability:             0          0
+      Total:               4321       3291
+    Minimum time between advertisement runs is 0 seconds
+
+   For address family: IPv4 Unicast
+    PEER_V4 peer-group member
+    Update group 1, subgroup 1
+    Packet Queue length 0
+    Inbound soft reconfiguration allowed
+    Community attribute sent to this neighbor(all)
+    Inbound path policy configured
+    Outbound path policy configured
+    Route map for incoming advertisements is *FROM_BGP_PEER_V4
+    Route map for outgoing advertisements is *TO_BGP_PEER_V4
+    6400 accepted prefixes
+
+    Connections established 1; dropped 0
+    Last reset 00:04:36,   No AFI/SAFI activated for peer
+  Local host: 10.0.0.56, Local port: 179
+  Foreign host: 10.0.0.57, Foreign port: 57108
+  Nexthop: 10.0.0.56
+  Nexthop global: fc00::71
+  Nexthop local: fe80::82a2:35ff:fe46:999
+  BGP connection: shared network
+  BGP Connect Retry Timer in Seconds: 120
+  Read thread: on  Write thread: on  FD used: 32
 
   admin@sonic:~$ show bgp neighbors 10.0.0.57 advertised-routes
+  BGP table version is 11920, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
 
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> 0.0.0.0/0        10.0.0.59                              0 64600 65534 6666 6667 i
+  *> 10.1.0.32/32     0.0.0.0                  0         32768 i
+  *> 100.1.0.29/32    10.0.0.57                              0 64600 i
+  *> 100.1.0.30/32    10.0.0.59                              0 64600 i
+
+                                      ...
+
+  *> 193.11.248.0/25  10.0.0.61                              0 64600 65534 64799 65515 i
+  *> 193.11.248.128/25
+                      10.0.0.61                              0 64600 65534 64799 65515 i
+
+  Total number of prefixes 6405
   admin@sonic:~$ show bgp neighbors 10.0.0.57 received-routes
+  BGP table version is 0, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
 
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> 0.0.0.0/0        10.0.0.57                              0 64600 65534 6666 6667 i
+  *> 100.1.0.29/32    10.0.0.57                              0 64600 i
+  *> 192.168.8.0/25   10.0.0.57                              0 64600 65501 i
+  *> 192.168.8.128/25 10.0.0.57                              0 64600 65501 i
+  *> 192.168.16.0/25  10.0.0.57                              0 64600 65502 i
+
+                                      ...
+
+  *> 193.11.248.0/25  10.0.0.57                              0 64600 65534 64799 65515 i
+  *> 193.11.248.128/25
+                      10.0.0.57                              0 64600 65534 64799 65515 i
+
+  Total number of prefixes 6400
   admin@sonic:~$ show bgp neighbors 10.0.0.57 routes
+  BGP table version is 11920, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *= 0.0.0.0/0        10.0.0.57                              0 64600 65534 6666 6667 i
+  *> 100.1.0.29/32    10.0.0.57                              0 64600 i
+  *= 192.168.8.0/25   10.0.0.57                              0 64600 65501 i
+  *= 192.168.8.128/25 10.0.0.57                              0 64600 65501 i
+  *= 192.168.16.0/25  10.0.0.57                              0 64600 65502 i
+  *= 192.168.16.128/25
+                      10.0.0.57                              0 64600 65502 i
+
+                                      ...
+
+  *= 193.11.240.0/25  10.0.0.57                              0 64600 65534 64799 65514 i
+  *= 193.11.240.128/25
+                      10.0.0.57                              0 64600 65534 64799 65514 i
+  *= 193.11.248.0/25  10.0.0.57                              0 64600 65534 64799 65515 i
+  *= 193.11.248.128/25
+                      10.0.0.57                              0 64600 65534 64799 65515 i
+
+  Displayed  6400 routes and 25602 total paths
   ```
 
-  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp neighbors" for Quagga.
+  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp neighbors" for Quagga or FRR after 202006.
 
 
 **show ip bgp network [[<ipv4-address>|<ipv4-prefix>] [(bestpath | multipath | longer-prefixes | json)]]
@@ -1681,35 +1801,214 @@ This command displays all the details of IPv4 Border Gateway Protocol (BGP) pref
 
   ```
   admin@sonic:~$ show ip bgp network
+  BGP table version is 10839, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
 
-  admin@sonic:~$ show ip bgp network 10.1.0.32 bestpath
+     Network          Next Hop            Metric LocPrf Weight Path
+  *= 0.0.0.0/0        10.0.0.63                              0 64600 65534 6666 6667 i
+  *=                  10.0.0.61                              0 64600 65534 6666 6667 i
+  *>                  10.0.0.57                              0 64600 65534 6666 6667 i
+  *=                  10.0.0.59                              0 64600 65534 6666 6667 i
 
-  admin@sonic:~$ show ip bgp network 10.1.0.32 multipath
+                                      ...
+
+  *= 193.11.248.128/25
+                      10.0.0.63                              0 64600 65534 64799 65515 i
+  *=                  10.0.0.61                              0 64600 65534 64799 65515 i
+  *=                  10.0.0.59                              0 64600 65534 64799 65515 i
+  *>                  10.0.0.57                              0 64600 65534 64799 65515 i
+
+  Displayed  6405 routes and 25602 total paths
+  admin@sonic:~$ show ip bgp network 192.168.8.130 bestpath
+  BGP routing table entry for 192.168.8.128/25
+  Paths: (4 available, best #3, table default)
+    Advertised to non peer-group peers:
+    10.0.0.57 10.0.0.59 10.0.0.61 10.0.0.63
+    64600 65501
+      10.0.0.57 from 10.0.0.57 (100.1.0.29)
+        Origin IGP, valid, external, multipath, best (Router ID)
+        Last update: Tue Nov 24 07:23:34 2020
+
+  admin@sonic:~$ show ip bgp network 192.168.8.130 multipath
+  BGP routing table entry for 192.168.8.128/25
+  Paths: (4 available, best #3, table default)
+    Advertised to non peer-group peers:
+    10.0.0.57 10.0.0.59 10.0.0.61 10.0.0.63
+    64600 65501
+      10.0.0.63 from 10.0.0.63 (100.1.0.32)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 07:23:34 2020
+
+    64600 65501
+      10.0.0.61 from 10.0.0.61 (100.1.0.31)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 07:23:34 2020
+
+    64600 65501
+      10.0.0.57 from 10.0.0.57 (100.1.0.29)
+        Origin IGP, valid, external, multipath, best (Router ID)
+        Last update: Tue Nov 24 07:23:34 2020
+
+    64600 65501
+      10.0.0.59 from 10.0.0.59 (100.1.0.30)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 07:23:34 2020
 
   admin@sonic:~$ show ip bgp network 10.1.0.32 json
-
+  {
+    "prefix":"10.1.0.32\/32",
+    "advertisedTo":{
+      "10.0.0.57":{
+      },
+      "10.0.0.59":{
+      },
+      "10.0.0.61":{
+      },
+      "10.0.0.63":{
+      }
+    },
+    "paths":[
+      {
+        "aspath":{
+          "string":"Local",
+          "segments":[
+          ],
+          "length":0
+        },
+        "origin":"IGP",
+        "med":0,
+        "metric":0,
+        "weight":32768,
+        "valid":true,
+        "sourced":true,
+        "local":true,
+        "bestpath":{
+          "overall":true,
+          "selectionReason":"First path received"
+        },
+        "lastUpdate":{
+          "epoch":1606202576,
+          "string":"Tue Nov 24 07:22:56 2020\n"
+        },
+        "nexthops":[
+          {
+            "ip":"0.0.0.0",
+            "afi":"ipv4",
+            "metric":0,
+            "accessible":true,
+            "used":true
+          }
+        ],
+        "peer":{
+          "peerId":"0.0.0.0",
+          "routerId":"10.1.0.32"
+        }
+      }
+    ]
+  }
   admin@sonic:~$ show ip bgp network 10.1.0.32/32 bestpath
+  BGP routing table entry for 10.1.0.32/32
+  Paths: (1 available, best #1, table default)
+    Advertised to non peer-group peers:
+    10.0.0.57 10.0.0.59 10.0.0.61 10.0.0.63
+    Local
+      0.0.0.0 from 0.0.0.0 (10.1.0.32)
+        Origin IGP, metric 0, weight 32768, valid, sourced, local, best (First path received)
+        Last update: Tue Nov 24 07:22:56 2020
 
   admin@sonic:~$ show ip bgp network 10.1.0.32/32 multipath
+  BGP routing table entry for 10.1.0.32/32
+  Paths: (1 available, best #1, table default)
+    Advertised to non peer-group peers:
+    10.0.0.57 10.0.0.59 10.0.0.61 10.0.0.63
+    Local
+      0.0.0.0 from 0.0.0.0 (10.1.0.32)
+        Origin IGP, metric 0, weight 32768, valid, sourced, local, best (First path received)
+        Last update: Tue Nov 24 07:22:56 2020
 
   admin@sonic:~$ show ip bgp network 10.1.0.32/32 json
-
+  {
+    "prefix":"10.1.0.32\/32",
+    "advertisedTo":{
+      "10.0.0.57":{
+      },
+      "10.0.0.59":{
+      },
+      "10.0.0.61":{
+      },
+      "10.0.0.63":{
+      }
+    },
+    "paths":[
+      {
+        "aspath":{
+          "string":"Local",
+          "segments":[
+          ],
+          "length":0
+        },
+        "origin":"IGP",
+        "med":0,
+        "metric":0,
+        "weight":32768,
+        "valid":true,
+        "sourced":true,
+        "local":true,
+        "bestpath":{
+          "overall":true,
+          "selectionReason":"First path received"
+        },
+        "lastUpdate":{
+          "epoch":1606202576,
+          "string":"Tue Nov 24 07:22:56 2020\n"
+        },
+        "nexthops":[
+          {
+            "ip":"0.0.0.0",
+            "afi":"ipv4",
+            "metric":0,
+            "accessible":true,
+            "used":true
+          }
+        ],
+        "peer":{
+          "peerId":"0.0.0.0",
+          "routerId":"10.1.0.32"
+        }
+      }
+    ]
+  }
   admin@sonic:~$ show ip bgp network 10.1.0.32/32 longer-prefixes
+  BGP table version is 10839, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> 10.1.0.32/32     0.0.0.0                  0         32768 i
+
+  Displayed  1 routes and 25602 total paths
   ```
 
-**show bgp ipv6 summary (Versions >= 201904 using default FRR routing stack)**
+**show bgp ipv6 summary (201904 <= Versions <=201911 using default FRR routing stack)**
 
-**show ipv6 bgp summary (Versions <= 201811 using Quagga routing stack)**
+**show ipv6 bgp summary (Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack)**
 
 This command displays the summary of all IPv6 bgp neighbors that are configured and the corresponding states.
 
 - Usage:
 
-  *Versions >= 201904 using default FRR routing stack*
+  *201904 <= Versions <=201911 using default FRR routing stack*
   ```
   show bgp ipv6 summary
   ```
-  *Versions <= 201811 using Quagga routing stack*
+  *Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack*
   ```
   show ipv6 bgp summary
   ```
@@ -1731,73 +2030,488 @@ This command displays the summary of all IPv6 bgp neighbors that are configured 
 
   Total number of neighbors 4
   ```
-  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ipv6 bgp summary" for Quagga.
+  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ipv6 bgp summary" for Quagga or FRR after 202006.
 
 
 
-**show bgp ipv6 neighbors (Versions >= 201904 using default FRR routing stack)**
+**show bgp ipv6 neighbors (201904 <= Versions <=201911 using default FRR routing stack)**
 
-**show ipv6 bgp neighbors (Versions <= 201811 using Quagga routing stack)**
+**show ipv6 bgp neighbors (Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack)**
 
 This command displays all the details of one particular IPv6 Border Gateway Protocol (BGP) neighbor. Option is also available to display only the advertised routes, or the received routes, or all routes.
 
 
 - Usage:
 
-  *Versions >= 201904 using default FRR routing stack*
+  *201904 <= Versions <=201911 using default FRR routing stack*
   ```
   show bgp ipv6 neighbors [<ipv6-address> [(advertised-routes | received-routes | routes)]]
   ```
-  *Versions <= 201811 using Quagga routing stack*
+  *Versions <= 201811 using Quagga routing stack or Version >= 202006 using FRR routing stack*
   ```
   show ipv6 bgp neighbors [<ipv6-address> [(advertised-routes | received-routes | routes)]]
   ```
 
 - Example:
   ```
+  admin@sonic:~$ show bgp ipv6 neighbors
+  BGP neighbor is fc00::72, remote AS 64600, local AS 65100, external link
+   Description: ARISTA01T1
+   Member of peer-group PEER_V6 for session parameters
+    BGP version 4, remote router ID 100.1.0.29, local router ID 10.1.0.32
+    BGP state = Established, up for 01:18:47
+    Last read 00:00:02, Last write 00:00:02
+    Hold time is 10, keepalive interval is 3 seconds
+    Configured hold time is 10, keepalive interval is 3 seconds
+    Neighbor capabilities:
+      4 Byte AS: advertised and received
+      AddPath:
+        IPv6 Unicast: RX advertised IPv6 Unicast and received
+      Route refresh: advertised and received(new)
+      Address Family IPv6 Unicast: advertised and received
+      Hostname Capability: advertised (name: as5812-54x,domain name: n/a) not received
+      Graceful Restart Capabilty: advertised and received
+        Remote Restart timer is 300 seconds
+        Address families by peer:
+          none
+    Graceful restart information:
+      End-of-RIB send: IPv6 Unicast
+      End-of-RIB received: IPv6 Unicast
+    Message statistics:
+      Inq depth is 0
+      Outq depth is 0
+                           Sent       Rcvd
+      Opens:                  2          1
+      Notifications:          2          0
+      Updates:             5081       3202
+      Keepalives:          1576       1575
+      Route Refresh:          0          0
+      Capability:             0          0
+      Total:               6661       4778
+    Minimum time between advertisement runs is 0 seconds
+
+   For address family: IPv6 Unicast
+    PEER_V6 peer-group member
+    Update group 2, subgroup 2
+    Packet Queue length 0
+    Inbound soft reconfiguration allowed
+    Community attribute sent to this neighbor(all)
+    Inbound path policy configured
+    Outbound path policy configured
+    Route map for incoming advertisements is *FROM_BGP_PEER_V6
+    Route map for outgoing advertisements is *TO_BGP_PEER_V6
+    6400 accepted prefixes
+
+    Connections established 1; dropped 0
+    Last reset 01:19:13,   No AFI/SAFI activated for peer
+  Local host: fc00::71, Local port: 179
+  Foreign host: fc00::72, Foreign port: 43581
+  Nexthop: 10.0.0.56
+  Nexthop global: fc00::71
+  Nexthop local: fe80::3e2c:99ff:fe15:aa60
+  BGP connection: shared network
+  BGP Connect Retry Timer in Seconds: 120
+  Read thread: on  Write thread: on  FD used: 22
+
+  ...
+
+  admin@sonic:~$ show bgp ipv6 neighbors fc00::72
+  BGP neighbor is fc00::72, remote AS 64600, local AS 65100, external link
+   Description: ARISTA01T1
+   Member of peer-group PEER_V6 for session parameters
+    BGP version 4, remote router ID 100.1.0.29, local router ID 10.1.0.32
+    BGP state = Established, up for 01:18:47
+    Last read 00:00:02, Last write 00:00:02
+    Hold time is 10, keepalive interval is 3 seconds
+    Configured hold time is 10, keepalive interval is 3 seconds
+    Neighbor capabilities:
+      4 Byte AS: advertised and received
+      AddPath:
+        IPv6 Unicast: RX advertised IPv6 Unicast and received
+      Route refresh: advertised and received(new)
+      Address Family IPv6 Unicast: advertised and received
+      Hostname Capability: advertised (name: as5812-54x,domain name: n/a) not received
+      Graceful Restart Capabilty: advertised and received
+        Remote Restart timer is 300 seconds
+        Address families by peer:
+          none
+    Graceful restart information:
+      End-of-RIB send: IPv6 Unicast
+      End-of-RIB received: IPv6 Unicast
+    Message statistics:
+      Inq depth is 0
+      Outq depth is 0
+                           Sent       Rcvd
+      Opens:                  2          1
+      Notifications:          2          0
+      Updates:             5081       3202
+      Keepalives:          1576       1575
+      Route Refresh:          0          0
+      Capability:             0          0
+      Total:               6661       4778
+    Minimum time between advertisement runs is 0 seconds
+
+   For address family: IPv6 Unicast
+    PEER_V6 peer-group member
+    Update group 2, subgroup 2
+    Packet Queue length 0
+    Inbound soft reconfiguration allowed
+    Community attribute sent to this neighbor(all)
+    Inbound path policy configured
+    Outbound path policy configured
+    Route map for incoming advertisements is *FROM_BGP_PEER_V6
+    Route map for outgoing advertisements is *TO_BGP_PEER_V6
+    6400 accepted prefixes
+
+    Connections established 1; dropped 0
+    Last reset 01:19:13,   No AFI/SAFI activated for peer
+  Local host: fc00::71, Local port: 179
+  Foreign host: fc00::72, Foreign port: 43581
+  Nexthop: 10.0.0.56
+  Nexthop global: fc00::71
+  Nexthop local: fe80::3e2c:99ff:fe15:aa60
+  BGP connection: shared network
+  BGP Connect Retry Timer in Seconds: 120
+  Read thread: on  Write thread: on  FD used: 22
+
   admin@sonic:~$ show bgp ipv6 neighbors fc00::72 advertised-routes
+  BGP table version is 11661, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> ::/0             fc00::72                               0 64600 65534 6666 6667 i
+  *> 2064:100::1d/128 fc00::72                               0 64600 i
+  *> 2064:100::1e/128 fc00::76                               0 64600 i
+  *> 2064:100::1f/128 fc00::7a                               0 64600 i
+  *> 2064:100::20/128 fc00::7e                               0 64600 i
+
+                                          ...
+
+  *> 20c1:bf8::/64    fc00::72                               0 64600 65534 64799 65515 i
+  *> 20c1:bf8:0:80::/64
+                      fc00::72                               0 64600 65534 64799 65515 i
+  *> fc00:1::/64      ::                       0         32768 i
+  *> fc02:1000::/64   ::                       0         32768 i
+
+  Total number of prefixes 6405
 
   admin@sonic:~$ show bgp ipv6 neighbors fc00::72 received-routes
+  BGP table version is 0, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> ::/0             fc00::72                               0 64600 65534 6666 6667 i
+  *> 2064:100::1d/128 fc00::72                               0 64600 i
+  *> 20c0:a808::/64   fc00::72                               0 64600 65501 i
+  *> 20c0:a808:0:80::/64
+                      fc00::72                               0 64600 65501 i
+
+                                          ...
+
+  *> 20c1:bf8::/64    fc00::72                               0 64600 65534 64799 65515 i
+  *> 20c1:bf8:0:80::/64
+                      fc00::72                               0 64600 65534 64799 65515 i
+
+  Total number of prefixes 6400
 
   admin@sonic:~$ show bgp ipv6 neighbors fc00::72 routes
+  BGP table version is 11661, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> ::/0             fc00::72                               0 64600 65534 6666 6667 i
+  *> 2064:100::1d/128 fc00::72                               0 64600 i
+  *> 20c0:a808::/64   fc00::72                               0 64600 65501 i
+  *> 20c0:a808:0:80::/64
+                      fc00::72                               0 64600 65501 i
+
+                                          ...
+
+  *> 20c1:bf8::/64    fc00::72                               0 64600 65534 64799 65515 i
+  *> 20c1:bf8:0:80::/64
+                      fc00::72                               0 64600 65534 64799 65515 i
+
+  Displayed  6400 routes and 25602 total paths
   ```
-  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp summary" for Quagga.
+  Click [here](#Quagga-BGP-Show-Commands) to see the example for "show ip bgp summary" for Quagga or FRR after 202006.
 
 
 **show ipv6 bgp network [[<ipv6-address>|<ipv6-prefix>] [(bestpath | multipath | longer-prefixes | json)]]
 
-This command displays all the details of IPv6 Border Gateway Protocol (BGP) prefixes.  
+This command displays all the details of IPv6 Border Gateway Protocol (BGP) prefixes.
 
-- Usage: 
+- Usage:
 
-  
+
   ```
-  show ipv6 bgp network [[<ipv6-address>|<ipv6-prefix>] [(bestpath | multipath | longer-prefixes | json)]]   
+  show ipv6 bgp network [[<ipv6-address>|<ipv6-prefix>] [(bestpath | multipath | longer-prefixes | json)]]
   ```
 
 - Example:
 
   NOTE: The "longer-prefixes" option is only available when a network prefix with a "/" notation is used.
- 
+
   ```
   admin@sonic:~$ show ipv6 bgp network
+  BGP table version is 11661, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72 bestpath 
+     Network          Next Hop            Metric LocPrf Weight Path
+  *= ::/0             fc00::7a                               0 64600 65534 6666 6667 i
+  *=                  fc00::7e                               0 64600 65534 6666 6667 i
+  *>                  fc00::72                               0 64600 65534 6666 6667 i
+  *=                  fc00::76                               0 64600 65534 6666 6667 i
+  *> 2064:100::1d/128 fc00::72                               0 64600 i
+  *> 2064:100::1e/128 fc00::76                               0 64600 i
+  *> 2064:100::1f/128 fc00::7a                               0 64600 i
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72 multipath
+                                          ...
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72 json 
+  *= 20c1:bf8:0:80::/64
+                      fc00::7e                               0 64600 65534 64799 65515 i
+  *=                  fc00::7a                               0 64600 65534 64799 65515 i
+  *=                  fc00::76                               0 64600 65534 64799 65515 i
+  *>                  fc00::72                               0 64600 65534 64799 65515 i
+  *> fc00:1::/64      ::                       0         32768 i
+  *> fc02:1000::/64   ::                       0         32768 i
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72/64 bestpath
+  Displayed  6405 routes and 25602 total paths
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72/64 multipath
+  admin@sonic:~$ show ipv6 bgp network 2064:100::1d bestpath
+  BGP routing table entry for 2064:100::1d/128
+  Paths: (1 available, best #1, table default)
+    Advertised to non peer-group peers:
+    fc00::72 fc00::76 fc00::7a fc00::7e
+    64600
+      fc00::72 from fc00::72 (100.1.0.29)
+      (fe80::5054:ff:fe02:b909) (prefer-global)
+        Origin IGP, valid, external, best (First path received)
+        Last update: Tue Nov 24 08:56:51 2020
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72/64 json 
+  admin@sonic:~$ show ipv6 bgp network 20c0:a810::/64 multipath
+  BGP routing table entry for 20c0:a810::/64
+  Paths: (4 available, best #4, table default)
+    Advertised to non peer-group peers:
+    fc00::72 fc00::76 fc00::7a fc00::7e
+    64600 65502
+      fc00::76 from fc00::76 (100.1.0.30)
+      (fe80::5054:ff:fe25:758e) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
 
-  admin@sonic:~$ show ipv6 bgp network fc00::72/64 longer-prefixes
+    64600 65502
+      fc00::7e from fc00::7e (100.1.0.32)
+      (fe80::5054:ff:fe51:5f51) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
+
+    64600 65502
+      fc00::72 from fc00::72 (100.1.0.29)
+      (fe80::5054:ff:fe02:b909) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
+
+    64600 65502
+      fc00::7a from fc00::7a (100.1.0.31)
+      (fe80::5054:ff:fef2:88ce) (prefer-global)
+        Origin IGP, valid, external, multipath, best (Older Path)
+        Last update: Tue Nov 24 08:56:51 2020
+
+  admin@sonic:~$ show ipv6 bgp network 2064:100::1d json
+  {
+    "prefix":"2064:100::1d\/128",
+    "advertisedTo":{
+      "fc00::72":{
+      },
+      "fc00::76":{
+      },
+      "fc00::7a":{
+      },
+      "fc00::7e":{
+      }
+    },
+    "paths":[
+      {
+        "aspath":{
+          "string":"64600",
+          "segments":[
+            {
+              "type":"as-sequence",
+              "list":[
+                64600
+              ]
+            }
+          ],
+          "length":1
+        },
+        "origin":"IGP",
+        "valid":true,
+        "bestpath":{
+          "overall":true,
+          "selectionReason":"First path received"
+        },
+        "lastUpdate":{
+          "epoch":1606208211,
+          "string":"Tue Nov 24 08:56:51 2020\n"
+        },
+        "nexthops":[
+          {
+            "ip":"fc00::72",
+            "afi":"ipv6",
+            "scope":"global",
+            "metric":0,
+            "accessible":true,
+            "used":true
+          },
+          {
+            "ip":"fe80::5054:ff:fe02:b909",
+            "afi":"ipv6",
+            "scope":"link-local",
+            "accessible":true
+          }
+        ],
+        "peer":{
+          "peerId":"fc00::72",
+          "routerId":"100.1.0.29",
+          "type":"external"
+        }
+      }
+    ]
+  }
+
+  admin@sonic:~$ show ipv6 bgp network 2064:100::1d/128 bestpath
+  BGP routing table entry for 2064:100::1d/128
+  Paths: (1 available, best #1, table default)
+    Advertised to non peer-group peers:
+    fc00::72 fc00::76 fc00::7a fc00::7e
+    64600
+      fc00::72 from fc00::72 (100.1.0.29)
+      (fe80::5054:ff:fe02:b909) (prefer-global)
+        Origin IGP, valid, external, best (First path received)
+        Last update: Tue Nov 24 08:56:51 2020
+
+  admin@sonic:~$ show ipv6 bgp network 20c0:a810::/64 multipath
+  BGP routing table entry for 20c0:a810::/64
+  Paths: (4 available, best #4, table default)
+    Advertised to non peer-group peers:
+    fc00::72 fc00::76 fc00::7a fc00::7e
+    64600 65502
+      fc00::76 from fc00::76 (100.1.0.30)
+      (fe80::5054:ff:fe25:758e) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
+
+    64600 65502
+      fc00::7e from fc00::7e (100.1.0.32)
+      (fe80::5054:ff:fe51:5f51) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
+
+    64600 65502
+      fc00::72 from fc00::72 (100.1.0.29)
+      (fe80::5054:ff:fe02:b909) (prefer-global)
+        Origin IGP, valid, external, multipath
+        Last update: Tue Nov 24 08:56:51 2020
+
+    64600 65502
+      fc00::7a from fc00::7a (100.1.0.31)
+      (fe80::5054:ff:fef2:88ce) (prefer-global)
+        Origin IGP, valid, external, multipath, best (Older Path)
+        Last update: Tue Nov 24 08:56:51 2020
+
+  admin@sonic:~$ show ipv6 bgp network 2064:100::1d/128 json
+  {
+    "prefix":"2064:100::1d\/128",
+    "advertisedTo":{
+      "fc00::72":{
+      },
+      "fc00::76":{
+      },
+      "fc00::7a":{
+      },
+      "fc00::7e":{
+      }
+    },
+    "paths":[
+      {
+        "aspath":{
+          "string":"64600",
+          "segments":[
+            {
+              "type":"as-sequence",
+              "list":[
+                64600
+              ]
+            }
+          ],
+          "length":1
+        },
+        "origin":"IGP",
+        "valid":true,
+        "bestpath":{
+          "overall":true,
+          "selectionReason":"First path received"
+        },
+        "lastUpdate":{
+          "epoch":1606208211,
+          "string":"Tue Nov 24 08:56:51 2020\n"
+        },
+        "nexthops":[
+          {
+            "ip":"fc00::72",
+            "afi":"ipv6",
+            "scope":"global",
+            "metric":0,
+            "accessible":true,
+            "used":true
+          },
+          {
+            "ip":"fe80::5054:ff:fe02:b909",
+            "afi":"ipv6",
+            "scope":"link-local",
+            "accessible":true
+          }
+        ],
+        "peer":{
+          "peerId":"fc00::72",
+          "routerId":"100.1.0.29",
+          "type":"external"
+        }
+      }
+    ]
+  }
+
+  admin@sonic:~$ show ipv6 bgp network 2064:100::1d/128 longer-prefixes
+  BGP table version is 12770, local router ID is 10.1.0.32, vrf id 0
+  Default local pref 100, local AS 65100
+  Status codes:  s suppressed, d damped, h history, * valid, > best, = multipath,
+                 i internal, r RIB-failure, S Stale, R Removed
+  Nexthop codes: @NNN nexthop's vrf id, < announce-nh-self
+  Origin codes:  i - IGP, e - EGP, ? - incomplete
+
+     Network          Next Hop            Metric LocPrf Weight Path
+  *> 2064:100::1d/128 fc00::72                               0 64600 i
+
+  Displayed  1 routes and 25602 total paths
   ```
- 
-  
+
+
 
 
 **show route-map**
@@ -1870,6 +2584,26 @@ When the session is shutdown using this command, BGP state in "show ip bgp summa
 - Example:
   ```
   admin@sonic:~$ sudo config bgp shutdown all
+  Shutting down BGP session with neighbor 10.0.0.57...
+  Shutting down BGP session with neighbor 10.0.0.59...
+  Shutting down BGP session with neighbor 10.0.0.61...
+  Shutting down BGP session with neighbor 10.0.0.63...
+  admin@sonic:~$ show ip bgp summary
+
+  IPv4 Unicast Summary:
+  BGP router identifier 10.1.0.32, local AS number 65100 vrf-id 0
+  BGP table version 21863
+  RIB entries 3, using 552 bytes of memory
+  Peers 4, using 82 KiB of memory
+  Peer groups 6, using 384 bytes of memory
+
+  Neighbor        V         AS MsgRcvd MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd   NeighborName
+  10.0.0.57       4      64600    4437    5982        0    0    0 00:06:02 Idle (Admin)   ARISTA01T1
+  10.0.0.59       4      64600    4434    4682        0    0    0 00:06:11 Idle (Admin)   ARISTA02T1
+  10.0.0.61       4      64600    4433    4649        0    0    0 00:06:14 Idle (Admin)   ARISTA03T1
+  10.0.0.63       4      64600    4431    4603        0    0    0 00:06:16 Idle (Admin)   ARISTA04T1
+
+  Total number of neighbors 4
   ```
 
 **config bgp shutdown neighbor**
@@ -1883,10 +2617,13 @@ This command is to shut down a BGP session with a neighbor by that neighbor's IP
 
 - Examples:
   ```
-  admin@sonic:~$ sudo config bgp shutdown neighbor 192.168.1.124
+  admin@sonic:~$ sudo config bgp shutdown neighbor 10.0.0.57
+  Shutting down BGP session with neighbor 10.0.0.57...
   ```
   ```
-  admin@sonic:~$ sudo config bgp shutdown neighbor SONIC02SPINE
+  admin@sonic:~$ sudo config bgp shutdown neighbor ARISTA01T1
+  Shutting down BGP session with neighbor 10.0.0.57...
+  Shutting down BGP session with neighbor fc00::72...
   ```
 
 
@@ -1902,6 +2639,10 @@ This command is used to start up all the IPv4 & IPv6 BGP neighbors
 - Example:
   ```
   admin@sonic:~$ sudo config bgp startup all
+  Starting up BGP session with neighbor 10.0.0.57...
+  Starting up BGP session with neighbor 10.0.0.59...
+  Starting up BGP session with neighbor 10.0.0.61...
+  Starting up BGP session with neighbor 10.0.0.63...
   ```
 
 
@@ -1916,10 +2657,13 @@ This command is used to start up the particular IPv4 or IPv6 BGP neighbor using 
 
 - Examples:
   ```
-  admin@sonic:~$ sudo config bgp startup neighbor 192.168.1.124
+  admin@sonic:~$ sudo config bgp startup neighbor 10.0.0.57
+  Starting up BGP session with neighbor 10.0.0.57...
   ```
   ```
-  admin@sonic:~$ sudo config bgp startup neighbor SONIC02SPINE
+  admin@sonic:~$ sudo config bgp startup neighbor  ARISTA01T1
+  Starting up BGP session with neighbor 10.0.0.57...
+  Starting up BGP session with neighbor fc00::72...
   ```
 
 
@@ -1934,13 +2678,17 @@ This command is used to remove particular IPv4 or IPv6 BGP neighbor configuratio
 
 - Examples:
   ```
-  admin@sonic:~$ sudo config bgp remove neighbor 192.168.1.124
+  admin@sonic:~$ sudo config bgp remove neighbor 10.0.0.57
+  Removed configuration of BGP neighbor 10.0.0.57
   ```
   ```
-  admin@sonic:~$ sudo config bgp remove neighbor 2603:10b0:b0f:346::4a
+  admin@sonic:~$ sudo config bgp remove neighbor fc00::72
+  Removed configuration of BGP neighbor fc00::72
   ```
   ```
-  admin@sonic:~$ sudo config bgp remove neighbor SONIC02SPINE
+  admin@sonic:~$ sudo config bgp remove neighbor ARISTA01T1
+  Removed configuration of BGP neighbor 10.0.0.57
+  Removed configuration of BGP neighbor fc00::72
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#bgp)
