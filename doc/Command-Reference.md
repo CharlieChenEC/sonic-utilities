@@ -15,6 +15,7 @@
   * [Show System Status](#show-system-status)
   * [Show Hardware Platform](#show-hardware-platform)
     * [Transceivers](#transceivers)
+  * [Show PIM Cards Status](#show-pim-cards-status)
 * [AAA & TACACS+](#aaa--tacacs)
   * [AAA](#aaa)
     * [AAA show commands](#aaa-show-commands)
@@ -924,6 +925,30 @@ This command displays information for all the interfaces for the transceiver req
   -----------  ----------
   Ethernet100  Present
   ```
+
+### Show PIM Cards Status
+Displays the status of the PIM cards
+
+**show pim status**
+This command displays information for all PIM cards
+
+- Example (Display status for all PIM cards):
+  ```
+  admin@sonic:~$ show pim status
+  Slot Index    Operation Status    Type     HW Status
+  ------------  ------------------  -------  ----------------
+  slot 2        up                  PIM-16Q  status code: 0b1
+  slot 3        up                  PIM-16Q  status code: 0b1
+  slot 4        up                  PIM-16Q  status code: 0b1
+  slot 5        up                  PIM-16Q  status code: 0b1
+  slot 6        up                  PIM-16Q  status code: 0b1
+  slot 7        up                  PIM-16Q  status code: 0b1
+  slot 8        up                  PIM-16Q  status code: 0b1
+  slot 9        up                  PIM-16Q  status code: 0b0
+  ```
+Note: This command only works on the platforms which support PIM hotwap, for example: AS8000.
+
+
 Go Back To [Beginning of the document](#) or [Beginning of this section](#basic-show-commands)
 
 ## AAA & TACACS+
@@ -4538,6 +4563,26 @@ This command displays some more fields such as Lanes, Speed, MTU, Type, Asymmetr
   Ethernet172      13,14,15,16     100G    9100    hundredGigE44    down     down     N/A         N/A
   Ethernet176  109,110,111,112     100G    9100    hundredGigE45    down     down     N/A         N/A
   Ethernet180  105,106,107,108     100G    9100    hundredGigE46    down     down     N/A         N/A
+  ```
+
+**intfutil status_ext**
+This show command displays like "show interface status", but it would show extensional fields for the specific platforms.
+
+For AS8000 which support PIM hotswap, the extensional fields are "PIM slot" and "PIM status".
+
+- Example (all interfaces):
+  ```
+  admin@sonic:~$ intfutil status_ext
+  Interface    Lanes    Speed    MTU    FEC              Alias    Vlan    Oper    Admin    Type    Asym PFC    PIM Slot    PIM Status
+  -----------  -------  -------  -----  -----  -----------------  ------  ------  -------  ------  ----------  ----------  ------------
+  Ethernet0      5,6     100G   9100     rs    onehundredGigE0  routed      up       up     N/A         off           2            up
+  Ethernet1      7,8     100G   9100     rs    onehundredGigE1  routed      up       up     N/A         off           2            up
+  Ethernet2      1,2     100G   9100     rs    onehundredGigE2  routed      up       up     N/A         off           2            up
+  Ethernet3      3,4     100G   9100     rs    onehundredGigE3  routed      up       up     N/A         off           2            up
+  Ethernet4    37,38     100G   9100     rs    onehundredGigE4  routed      up       up     N/A         off           2            up
+  Ethernet5    39,40     100G   9100     rs    onehundredGigE5  routed      up       up     N/A         off           2            up
+  Ethernet6    33,34     100G   9100     rs    onehundredGigE6  routed      up       up     N/A         off           2            up
+  Ethernet7    35,36     100G   9100     rs    onehundredGigE7  routed      up       up     N/A         off           2            up
   ```
 
 **show interfaces transceiver**
