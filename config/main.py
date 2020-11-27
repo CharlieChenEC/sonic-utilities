@@ -650,6 +650,44 @@ def delete_sag_interface(ctx, db, addr_type, vlan_id, ip_addr) :
             ip_list.remove(ip_addr)
         db.mod_entry('SAG', (vlan_id, addr_type),{'gwip': ip_list})
 
+def is_valid_port(config_db, port):
+    """Check if port is in PORT table"""
+
+    port_table = config_db.get_table('PORT')
+    if port in port_table:
+        return True
+
+    return False
+
+def is_valid_portchannel(config_db, port):
+    """Check if port is in PORT_CHANNEL table"""
+
+    pc_table = config_db.get_table('PORTCHANNEL')
+    if port in pc_table:
+        return True
+
+    return False
+
+def is_port_router_interface(config_db, port):
+    """Check if port is a router interface"""
+
+    interface_table = config_db.get_table('INTERFACE')
+    for intf in interface_table:
+        if port == intf[0]:
+            return True
+
+    return False
+
+def is_pc_router_interface(config_db, pc):
+    """Check if portchannel is a router interface"""
+
+    pc_interface_table = config_db.get_table('PORTCHANNEL_INTERFACE')
+    for intf in pc_interface_table:
+        if pc == intf[0]:
+            return True
+
+    return False
+
 def _get_all_neighbor_ipaddresses(config_db, ignore_local_hosts=False):
     """Returns list of strings containing IP addresses of all BGP neighbors
        if the flag ignore_local_hosts is set to True, additional check to see if
@@ -1958,7 +1996,6 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
     db = ctx.obj['db']
     vlan_name = 'Vlan{}'.format(vid)
     vlan = db.get_entry('VLAN', vlan_name)
-    interface_table = db.get_table('INTERFACE')
 
     if get_interface_naming_mode() == "alias":
         interface_name = interface_alias_to_name(interface_name)
@@ -1981,9 +2018,17 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
         else:
             ctx.fail("{} is already a member of {}".format(interface_name,
                                                         vlan_name))
-    for entry in interface_table:
-        if (interface_name == entry[0]):
-            ctx.fail("{} is a L3 interface!".format(interface_name))
+
+    if is_valid_port(db, interface_name):
+        is_port = True
+    elif is_valid_portchannel(db, interface_name):
+        is_port = False
+    else:
+        ctx.fail("{} does not exist".format(interface_name))
+
+    if (is_port and is_port_router_interface(db, interface_name)) or \
+       (not is_port and is_pc_router_interface(db, interface_name)):
+        ctx.fail("{} is a L3 interface!".format(interface_name))
 
     members.append(interface_name)
     vlan['members'] = members
