@@ -6199,14 +6199,31 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#NTP)
 # PFC Watchdog Commands
 Detailed description of the PFC Watchdog could be fount on the [this wiki page](https://github.com/Azure/SONiC/wiki/PFC-Watchdog)
 
-**config pfcwd start \<arguments\>**
+**config pfcwd start**
 
 This command starts PFC Watchdog
 
 - Usage:
   ```
-  config pfcwd start --action drop ports all detection-time 400 --restoration-time 400
-  config pfcwd start --action forward ports Ethernet0 Ethernet8 detection-time 400
+  config pfcwd start [--action (drop | forward | alert)] [--restoration-time <ms_value>] ports (all | <PORTS>) detection-time <ms_value>
+ 
+  all     : All ethernet ports
+  <PORTS> : <ethernet_interface_name> seperate by space ' ', e.g Ethernet0 Ethernet1 Ethernet2
+  ```
+
+- Example: Sef pfcwd on all ethernet port
+  ```
+  admin@sonic:~$ config pfcwd start --action drop --restoration-time 400 ports all detection-time 400
+  ```
+
+- Example: Sef pfcwd on Ethernet0
+  ```
+  admin@sonic:~$ config pfcwd start --action drop --restoration-time 400 ports Ethernet0 detection-time 400
+  ```
+
+- Example: Sef pfcwd on Ethernet0 and Ethernet4
+  ```
+  admin@sonic:~$ config pfcwd start --action drop --restoration-time 400 ports Ethernet0 Ethernet4 detection-time 400
   ```
 
 **config pfcwd stop**
@@ -6218,34 +6235,54 @@ This command stops PFC Watchdog
   config pfcwd stop
   ```
 
-**config pfcwd interval \<interval_in_ms\>**
+- Example: Stop pfcwd on all ports
+  ```
+  admin@sonic:~$ config pfcwd stop
+  ```
+
+**config pfcwd interval**
 
 This command sets PFC Watchdog counter polling interval (in ms)
 
 - Usage:
   ```
-  config pfcwd interval 200
+  config pfcwd interval <interval_in_ms>
   ```
 
-**config pfcwd counter_poll \<enable/disable\>**
+- Example:
+  ```
+  admin@sonic:~$ config pfcwd interval 200
+  ```
+
+**config pfcwd counter_poll**
 
 This command enables or disables PFCWD related counters polling
 
 - Usage:
   ```
-  config pfcwd counter_poll disable
+  config pfcwd counter_poll (enable | disable)
   ```
 
-**config pfcwd big_red_switch \<enable/disable\>**
+- Example:
+  ```
+  admin@sonic:~$ config pfcwd counter_poll disable
+  ```
+
+**config pfcwd big_red_switch**
 
 This command enables or disables PFCWD's "BIG RED SWITCH"(BRS). After enabling BRS PFC Watchdog will be activated on all ports/queues it is configured for no matter whether the storm was detected or not
 
 - Usage:
   ```
-  config pfcwd big_red_switch enable
+  config pfcwd big_red_switch (enable | disable)
   ```
 
-**config pfcwd start_default**
+- Example:
+  ```
+  admin@sonic:~$ config pfcwd big_red_switch enable
+  ```
+
+**(Not supported) config pfcwd start_default**
 
 This command starts PFC Watchdog with the default settings.
 
@@ -6261,7 +6298,14 @@ Default values are the following:
    - polling interval - 200ms
    - action - 'drop'
 
-Additionally if number of ports in the system exceeds 32, all times will be multiplied by roughly <num_ports\>/32.
+Additionally if number of ports in the system exceeds 32, all times will be multiplied by roughly <num_ports\>/32 + 1.
+
+- Example:
+  ```
+  admin@sonic:~$ config pfcwd big_red_switch enable
+  ```
+
+Note: Due to the incomplete implementation of "config pfcwd start_default" this command is a malfunction.
 
 
 **show pfcwd config**
@@ -6273,6 +6317,14 @@ This command shows current PFC Watchdog configuration
   show pfcwd config
   ```
 
+- Example:
+  ```
+  admin@sonic:~$ show pfcwd config
+       PORT    ACTION    DETECTION TIME    RESTORATION TIME
+  ---------  --------  ----------------  ------------------
+  Ethernet0      drop               400                 400
+  ```
+
 **show pfcwd stats**
 
 This command shows current PFC Watchdog statistics (storms detected, packets dropped, etc)
@@ -6280,6 +6332,15 @@ This command shows current PFC Watchdog statistics (storms detected, packets dro
 - Usage:
   ```
   show pfcwd stats
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ show pfcwd stats
+        QUEUE       STATUS    STORM DETECTED/RESTORED    TX OK/DROP    RX OK/DROP    TX LAST OK/DROP    RX LAST OK/DROP
+  -----------  -----------  -------------------------  ------------  ------------  -----------------  -----------------
+  Ethernet0:3      stormed                        1/0       100/300       100/300              0/200              0/200
+  Ethernet0:4  operational                        2/2       100/100       100/100                0/0                0/0
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#pfc-watchdog-commands)
