@@ -8337,12 +8337,12 @@ This command displays virtual address to the physical address translation status
   ----------  -----------------------------------
   ```
 
-**show line**
+**show line (Not supported)**
 
 This command displays serial port or a virtual network connection status.
 This command is used only when SONiC is used as console switch.
 This command is not applicable when SONiC used as regular switch.
-NOTE: This command is not working. It crashes as follows. A bug ticket is opened for this issue.
+**NOTE: This command is not working. It crashes as follows. A bug ticket is opened for this issue.**
 
 - Usage:
   ```
