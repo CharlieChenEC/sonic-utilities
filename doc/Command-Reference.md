@@ -6168,9 +6168,10 @@ This command is used to add a NTP server IP address to the NTP server list.  Not
 
 - Usage:
   ```
-  config ntp add <ip_address>
+  config ntp add <ipv4-address>
   ```
 
+The following example shows how to add a NTP server.
 - Example:
   ```
   admin@sonic:~$ sudo config ntp add 9.9.9.9
@@ -6184,9 +6185,10 @@ This command is used to delete a configured NTP server IP address.
 
 - Usage:
   ```
-  config ntp del <ip_address>
+  config ntp del <ipv4-address>
   ```
 
+The following example shows how to remove the a NTP server.
 - Example:
   ```
   admin@sonic:~$ sudo config ntp del 9.9.9.9
@@ -7202,7 +7204,7 @@ This command is used to add a sFlow collector. Note that a maximum of 2 collecto
 
 - Usage:
   ```
-  config sflow collector add <collector-name> <ipv4-address | ipv6-address> [port <number>]
+  config sflow collector add <collector-name> <ipv4-address | ipv6-address> [--port <number>]
   ```
 
   - Parameters:
@@ -7211,6 +7213,7 @@ This command is used to add a sFlow collector. Note that a maximum of 2 collecto
     - ipv6-address : x: x: x: x::x format for IPv6 address of the collector (where :: notation specifies successive hexadecimal fields of zeros)
     - port (OPTIONAL): specifies the UDP port of the collector (the range is from 0 to 65535. The default is 6343.)
 
+The following example shows how to add a collector collector_A with IP address 10.11.46.2 and port 6343.
 - Example:
   ```
   admin@sonic:~# sudo config sflow collector add collector_A 10.11.46.2
@@ -7228,26 +7231,42 @@ This command is used to delete a sFlow collector with the given name.
   - Parameters:
     - collector-name: unique name of the sFlow collector
 
+
+The following example shows how to delete collector collector_A.
 - Example:
   ```
   admin@sonic:~# sudo config sflow collector del collector_A
   ```
 
-**config sflow agent-id**
+**config sflow agent-id add**
 
-This command is used to add/delete the sFlow agent-id. This setting is global (applicable to both collectors) and optional. Only a single agent-id is allowed. If agent-id is not specified (with this CLI), an appropriate IP that belongs to the switch is used as the agent-id based on some simple heuristics.
+This command is used to add the sFlow agent-id. This setting is global (applicable to both collectors) and optional. Only a single agent-id is allowed. If agent-id is not specified eth0  is used as the agent-id based on some simple heuristics..
 
 - Usage:
   ```
-  config sflow agent-id <add|del> <interface-name>
+  config sflow agent-id add <interface-name>
   ```
 
   - Parameters:
-    - interface-name: specify the interface name whose ipv4 or ipv6 address will be used as the agent-id in sFlow datagrams.
+    - interface-name: specify the interface name whose ipv4 or ipv6 address will be used as the agent-id in sFlow datagrams, and the default value is eth0.
 
+The following example shows how to change the agent-id to lo.
 - Example:
   ```
   admin@sonic:~# sudo config sflow agent-id add lo
+  ```
+
+**config sflow agent-id del**
+This command is used to set the sFlow agent-id to default value.
+- Usage:
+  ```
+  config sflow agent-id del
+  ```
+
+The following example shows how to change the agent-id to default value.
+- Example:
+  ```
+  admin@sonic:~# sudo config sflow agent-id del
   ```
 
 **config sflow**
@@ -7274,10 +7293,42 @@ Enable/disable sflow at an interface level. By default, sflow is enabled on all 
   - Parameters:
     - interface-name: specify the interface for which sFlow flow samples have to be enabled/disabled. The “all” keyword is used as a convenience to enable/disable sflow at the interface level for all the interfaces.
 
+**Note: The sFlow flow sampling will take effect when the COPP rule has be setup correctly. The steps are to add the below configuration to the file /usr/share/sonic/templates/copp.json.j2 in swss container, and then reboot the switch.**
+
+- copp.json.j2
+  ```
+  {
+    "COPP_TABLE:trap.group.sflow": {
+        "trap_ids": "sample_packet",
+        "trap_action":"trap",
+        "trap_priority":"1",
+        "queue": "2",
+        "meter_type":"packets",
+        "mode":"sr_tcm",
+        "cir":"1000",
+        "cbs":"1000",
+        "red_action":"drop",
+        "genetlink_name":"psample",
+        "genetlink_mcgrp_name":"packets"
+    },
+    "OP": "SET"
+  }
+  ```
+
+The following example shows how to disable flow samples on Ethernet40.
 - Example:
   ```
   admin@sonic:~# sudo config sflow interface disable Ethernet40
   ```
+
+The following example shows how to disable all interfaces excepted Ethernet0.
+- Example:
+  ```
+  admin@sonic:~# sudo config sflow interface enable Ethernet0
+  admin@sonic:~# sudo config sflow interface disable all
+  ```
+
+**NOTE: There is an known issue in current implementation, the parameter "all" picks all interfaces but the configured one. That makes the unexpected behavior in disable command - No interfaces will be disabled.**
 
 **config sflow interface sample-rate**
 
@@ -7302,6 +7353,7 @@ It is recommended not to change the defaults. This CLI is to be used only in cas
     - interface-name: specify the interface for which the sampling rate value is to be set
     - value: value is the average number of packets skipped before the sample is taken. "The sampling rate specifies random sampling probability as the ratio of packets observed to samples generated. For example a sampling rate of 256 specifies that, on average, 1 sample will be generated for every 256 packets observed." Valid range 256:8388608.
 
+The following example shows to how set sample rate as 1000 on interface Ethernet32.
 - Example:
   ```
   admin@sonic:~# sudo config sflow interface sample-rate Ethernet32 1000
@@ -7316,8 +7368,9 @@ This command is used to set the counter polling interval. Default is 20 seconds.
   ```
 
   - Parameters:
-    - value: 0-300 seconds. Set polling-interval to 0 to disable counter polling
+    - value: **0, 5-300** seconds. Set polling-interval to 0 to disable counter polling
 
+The following example shows how to set polling-interval to 30 seconds.
 - Example:
   ```
   admin@sonic:~# sudo config sflow polling-interval 30
@@ -7521,9 +7574,14 @@ This command is used to add a SYSLOG server to the syslog server list.  Note tha
 
 - Usage:
   ```
-  config syslog add <ip_address>
+  config syslog add <ipv4-address | ipv6-address>
   ```
+- Parameters:
+  - ipv4-address : IP address of the collector in dotted decimal format for IPv4
+  - ipv6-address : x: x: x: x ::x format for IPv6 address of the collector (where :: notation specifies successive hexadecimal fields of zeros)
 
+
+The following example shows how to add a remote syslog server at the ip address 1.1.1.1.
 - Example:
   ```
   admin@sonic:~$ sudo config syslog add 1.1.1.1
@@ -7537,9 +7595,14 @@ This command is used to delete the syslog server configured.
 
 - Usage:
   ```
-  config syslog del <ip_address>
+  config syslog del <ipv4-address | ipv6-address>
   ```
+- Parameters:
+  - ipv4-address : IP address of the collector in dotted decimal format for IPv4
+  - ipv6-address : x: x: x: x ::x format for IPv6 address of the collector (where :: notation specifies successive hexadecimal fields of zeros)
 
+
+The following example shows how to delete a remote syslog server.
 - Example:
   ```
   admin@sonic:~$ sudo config syslog del 1.1.1.1
