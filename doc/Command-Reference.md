@@ -5161,11 +5161,11 @@ This command displays the brief summary of all LLDP neighbors.
   ```
   admin@sonic:~$ show lldp table
   Capability codes: (R) Router, (B) Bridge, (O) Other
-  LocalPort    RemoteDevice       RemotePortID         Capability    RemotePortDescr
-  -----------  -----------------  -------------------  ------------  --------------------
-  Ethernet112  T1-1               hundredGigE1/2       BR            T0-2:hundredGigE1/29
-  Ethernet116  T1-2               hundredGigE1/2       BR            T0-2:hundredGigE1/30
-  eth0         swtor-b2lab2-1610  GigabitEthernet 0/2  OBR
+  LocalPort    RemoteDevice    RemotePortID       Capability    RemotePortDescr
+  -----------  --------------  -----------------  ------------  -------------------------------
+  Ethernet112  ARISTA01T1      Ethernet1          BR
+  Ethernet116  ARISTA02T1      Ethernet1          BR
+  eth0                         00:e0:0c:00:01:05  BR            Ethernet Port on unit 1, port 8
   --------------------------------------------------
   Total entries displayed:  3
   ```
@@ -5185,33 +5185,51 @@ This command displays more details about all LLDP neighbors or only the neighbor
   -------------------------------------------------------------------------------
   LLDP neighbors:
   -------------------------------------------------------------------------------
-  Interface:    eth0, via: LLDP, RID: 1, Time: 0 day, 12:21:21
+  Interface:    eth0, via: LLDP, RID: 5, Time: 0 day, 00:04:12
     Chassis:
-      ChassisID:    mac 00:01:e8:81:e3:45
-      SysName:      swtor-b2lab2-1610
-      SysDescr:     Dell Force10 Networks Real Time Operating System Software. Dell Force10 Operating System Version: 1.0. Dell Force10 Application Software Version: 8.3.3.10d. Copyright (c) 1999-2012 by Dell Inc. All Rights Reserved.Build Time: Tue Sep 22 11:21:54 PDT 2015
-      TTL:          20
-      Capability:   Repeater, on
+      ChassisID:    mac 00:e0:0c:00:00:fd
+      SysDescr:     ECS4120-28T
       Capability:   Bridge, on
       Capability:   Router, on
     Port:
-      PortID:       ifname GigabitEthernet 0/2
-    VLAN:         162, pvid: yes
-  -------------------------------------------------------------------------------
-  Interface:    Ethernet116, via: LLDP, RID: 3, Time: 0 day, 12:20:49
-    Chassis:
-      ChassisID:    mac 4c:76:25:e7:f0:c0
-      SysName:      T1-2
-      SysDescr:     Debian GNU/Linux 8 (jessie) Linux 4.9.0-8-amd64 #1 SMP Debian 4.9.110-3+deb9u6 (2015-12-19) x86_64
+      PortID:       mac 00:e0:0c:00:01:05
+      PortDescr:    Ethernet Port on unit 1, port 8
       TTL:          120
-      MgmtIP:       10.11.162.40
+      MFS:          1522
+      PMD autoneg:  supported: yes, enabled: yes
+        Adv:          10Base-T, HD: yes, FD: yes
+        Adv:          100Base-TX, HD: yes, FD: yes
+        Adv:          1000Base-T, HD: no, FD: yes
+        MAU oper type: 1000BaseTFD - Four-pair Category 5 UTP, full duplex mode
+    VLAN:         20, pvid: yes
+  -------------------------------------------------------------------------------
+  Interface:    Ethernet112, via: LLDP, RID: 1, Time: 0 day, 00:04:32
+    Chassis:
+      ChassisID:    mac 52:54:00:02:b9:09
+      SysName:      ARISTA01T1
+      SysDescr:     Arista Networks EOS version 4.20.15M running on an Arista Networks vEOS
+      MgmtIP:       10.250.2.100
       Capability:   Bridge, on
       Capability:   Router, on
-      Capability:   Wlan, off
-      Capability:   Station, off
     Port:
-      PortID:       local hundredGigE1/2
-      PortDescr:    T0-2:hundredGigE1/30
+      PortID:       ifname Ethernet1
+      TTL:          120
+      MFS:          9236
+      Port is aggregated. PortAggregID: 1000001
+  -------------------------------------------------------------------------------
+  Interface:    Ethernet116, via: LLDP, RID: 3, Time: 0 day, 00:04:32
+    Chassis:
+      ChassisID:    mac 52:54:00:25:75:8e
+      SysName:      ARISTA02T1
+      SysDescr:     Arista Networks EOS version 4.20.15M running on an Arista Networks vEOS
+      MgmtIP:       10.250.2.101
+      Capability:   Bridge, on
+      Capability:   Router, on
+    Port:
+      PortID:       ifname Ethernet1
+      TTL:          120
+      MFS:          9236
+      Port is aggregated. PortAggregID: 1000001
   -------------------------------------------------------------------------------
   ```
 
@@ -5220,24 +5238,22 @@ Optionally, you can specify an interface name in order to display only that part
 - Example2:
   ```
   admin@sonic:~$ show lldp neighbors Ethernet112
-  show lldp neighbors Ethernet112
   -------------------------------------------------------------------------------
   LLDP neighbors:
   -------------------------------------------------------------------------------
-  Interface:    Ethernet112, via: LLDP, RID: 2, Time: 0 day, 19:24:17
+  Interface:    Ethernet112, via: LLDP, RID: 5, Time: 0 day, 00:05:08
     Chassis:
-      ChassisID:    mac 4c:76:25:e5:e6:c0
-      SysName:      T1-1
-      SysDescr:     Debian GNU/Linux 8 (jessie) Linux 4.9.0-8-amd64 #1 SMP Debian 4.9.110-3+deb9u6 (2015-12-19) x86_64
-      TTL:          120
-      MgmtIP:       10.11.162.41
+      ChassisID:    mac 52:54:00:02:b9:09
+      SysName:      ARISTA01T1
+      SysDescr:     Arista Networks EOS version 4.20.15M running on an Arista Networks vEOS
+      MgmtIP:       10.250.2.100
       Capability:   Bridge, on
       Capability:   Router, on
-      Capability:   Wlan, off
-      Capability:   Station, off
     Port:
-      PortID:       local hundredGigE1/2
-      PortDescr:    T0-2:hundredGigE1/29
+      PortID:       ifname Ethernet1
+      TTL:          120
+      MFS:          9236
+      Port is aggregated. PortAggregID: 1000001
   -------------------------------------------------------------------------------
   ```
 Go Back To [Beginning of the document](#) or [Beginning of this section](#lldp)
