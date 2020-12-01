@@ -814,7 +814,6 @@ def alias(interfacename):
 
     click.echo(tabulate(body, header))
 
-
 #
 # 'breakout' group ###
 #
@@ -908,6 +907,70 @@ def currrent_mode(ctx, interface):
         body.append([name, str(curBrkout_tbl[name]['brkout_mode'])])
     click.echo(tabulate(body, header, tablefmt="grid"))
 
+@cli.group('storm-control')
+def storm_control():
+    """ show storm-control """
+    pass
+
+@storm_control.command('all')
+def storm_control_all():
+    """ Show storm-control for all interfaces """
+
+    header = ['Interface Name', 'Storm Type', 'Rate (kbps)']
+    body = []
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    table = config_db.get_table('PORT_STORM_CONTROL')
+
+    #To avoid further looping below
+    if not table:
+        click.echo("Can't find PORT_STORM_CONTROL table in config db")
+        return
+
+    sorted_table = natsorted(table)
+
+    for storm_key in sorted_table:
+        interface_name = storm_key[0]
+        storm_type = storm_key[1]
+        data = config_db.get_entry('PORT_STORM_CONTROL', storm_key)
+
+        if data:
+            kbps = data['kbps']
+            body.append([interface_name, storm_type, kbps])
+
+    click.echo(tabulate(body, header, tablefmt="grid"))
+
+@storm_control.command('interface')
+@click.argument('interfacename', required=True)
+def storm_control_interface(interfacename):
+    """ Show storm-control for an interface """
+
+    storm_type_list = ['broadcast','unknown-unicast','unknown-multicast']
+
+    header = ['Interface Name', 'Storm Type', 'Rate (kbps)']
+    body = []
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    table = config_db.get_table('PORT_STORM_CONTROL')
+
+    #To avoid further looping below
+    if not table:
+        click.echo("Can't find PORT_STORM_CONTROL table in config db")
+        return
+
+    for storm_type in storm_type_list:
+        storm_key = interfacename + '|' + storm_type
+        data = config_db.get_entry('PORT_STORM_CONTROL', storm_key)
+
+        if data:
+            kbps = data['kbps']
+            body.append([interfacename, storm_type, kbps])
+
+    click.echo(tabulate(body, header, tablefmt="grid"))
 
 #
 # 'neighbor' group ###
