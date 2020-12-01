@@ -947,28 +947,23 @@ This command displays the AAA settings currently present in the network node
    ```
    admin@sonic:~$ show aaa
    AAA authentication login local (default)
-   AAA authentication failthrough True (default)
-   AAA authentication fallback True (default)
+   AAA authentication failthrough False (default)
    ```
 
 #### AAA config commands
 
-This sub-section explains all the possible CLI based configuration options for the AAA module. The list of commands/sub-commands possible for aaa is given below.
+This sub-section explains all the possible CLI based configuration options for the AAA module. The list of commands/sub-commands possible for AAA is given below.
 
-  Command: aaa authentication
-    sub-commands:
-      - aaa authentication failthrough
-      - aaa authentication fallback
-      - aaa authentication login
+Commands:
+
+- aaa authentication sub-commands:
+  - aaa authentication failthrough
+  - aaa authentication fallback
+  - aaa authentication login
 
 **aaa authentication failthrough**
 
-This command is used to either enable or disable the failthrough option.
-This command is useful when user has configured more than one tacacs+ server and when user has enabled tacacs+ authentication.
-When authentication request to the first server fails, this configuration allows to continue the request to the next server.
-When this configuration is enabled, authentication process continues through all servers configured.
-When this is disabled and if the authentication request fails on first server, authentication process will stop and the login will be disallowed.
-
+This command is used to either enable or disable the failthrough option. This command is useful when a user has configured more than one tacacs+ server and when tacacs+ authentication is enabled. When an authentication request to the first server fails, this configuration allows it to continue the request to the next server. When this configuration is enabled, the authentication process continues through all servers configured. When disabled and if the authentication request fails on first server, the authentication process will stop and the login will be disallowed.
 
 - Usage:
   ```
@@ -978,36 +973,38 @@ When this is disabled and if the authentication request fails on first server, a
   - Parameters:
     - enable: This allows the AAA module to process with local authentication if remote authentication fails.
     - disable: This disallows the AAA module to proceed further if remote authentication fails.
-    - default: This re-configures the default value, which is "enable".
+    - default: This re-configures the default value, which is "disable".
 
+The below example is to enable the failthrough option.
 
 - Example:
   ```
   admin@sonic:~$ sudo config aaa authentication failthrough enable
   ```
+
 **aaa authentication fallback**
 
-The command is not used at the moment.
-When the tacacs+ authentication fails, it falls back to local authentication by default.
+When the servers used in tacacs+ authentication are unreachable, it falls back to local authentication by default.
+
+The fallback function is always enabled in the current design, which means this command takes no effect.
 
 - Usage:
   ```
   config aaa authentication fallback (enable | disable | default)
   ```
 
+The below example is to enable the fallback option.
+
 - Example:
   ```
   admin@sonic:~$ sudo config aaa authentication fallback enable
   ```
 
+**NOTE:  In the Sonic current design, the authentication faillback is always enabled. It makes this command as a malfunction one.**
+
 **aaa authentication login**
 
-This command is used to either configure whether AAA should use local database or remote tacacs+ database for user authentication.
-By default, AAA uses local database for authentication. New users can be added/deleted using the linux commands (Note that the configuration done using linux commands are not preserved during reboot).
-Admin can enable remote tacacs+ server based authentication by selecting the AUTH_PROTOCOL as tacacs+ in this command.
-Admins need to configure the tacacs+ server accordingly and ensure that the connectivity to tacacas+ server is available via the management interface.
-Once if the admins choose the remote authentication based on tacacs+ server, all user logins will be authenticated by the tacacs+ server.
-If the authentication fails, AAA will check the "failthrough" configuration and authenticates the user based on local database if failthrough is enabled.
+This command is used to either configure whether AAA should use the local database or a remote tacacs+ database for user authentication. By default, AAA uses a local database for authentication. New users can be added/deleted using Linux commands (Note that the configuration done using Linux commands are not preserved during reboot). Admin can enable remote tacacs+ server based authentication by selecting the AUTH_PROTOCOL as tacacs+ in this command. Admins need to configure the tacacs+ server accordingly and ensure that the connectivity to the tacacs+ server is available via the management interface. Once admins choose the remote authentication based on tacacs+ server, all user logins will be authenticated by the tacacs+ server. If the authentication fails, AAA will check the "failthrough" configuration and authenticate the user based on the local database if failthrough is enabled.
 
 - Usage:
   ```
@@ -1019,6 +1016,7 @@ If the authentication fails, AAA will check the "failthrough" configuration and 
     - local: Disables remote authentication and uses local authentication
     - default: Reset back to default value, which is only "local" authentication
 
+The below command is to configure AAA to use remote tacacs+ database for user authentication.
 
 - Example:
   ```
