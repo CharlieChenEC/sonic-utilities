@@ -723,7 +723,10 @@ def address ():
     mgmt_ip_data = config_db.get_table('MGMT_INTERFACE')
     for key in natsorted(mgmt_ip_data.keys()):
         click.echo("Management IP address = {0}".format(key[1]))
-        click.echo("Management Network Default Gateway = {0}".format(mgmt_ip_data[key]['gwaddr']))
+        if mgmt_ip_data[key].get('gwaddr') is not None:
+            click.echo("Management Network Default Gateway = {0}".format(mgmt_ip_data[key]['gwaddr']))
+        else:
+            click.echo("Management Network Default Gateway = ")
 
 #
 # 'snmpagentaddress' group ("show snmpagentaddress ...")
