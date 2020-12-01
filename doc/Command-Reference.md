@@ -3909,7 +3909,7 @@ This command displays all the WRED profiles that are configured in the device.
 - Example:
   ```
   admin@sonic:~$ show ecn
-  Profile: **AZURE_LOSSLESS**
+  Profile: AZURE_LOSSLESS
   -----------------------  -------
   red_max_threshold        2097152
   red_drop_probability     5
@@ -3926,7 +3926,7 @@ This command displays all the WRED profiles that are configured in the device.
   wred_red_enable          true
   -----------------------  -------
 
-  Profile: **wredprofileabcd**
+  Profile: wredprofileabcd
   -----------------  ---
   red_max_threshold  100
   -----------------  ---
@@ -3955,9 +3955,50 @@ The list of the WRED profile fields that are configurable is listed in the below
     - green_threshold_max   Set green max threshold
     - green_threshold_min   Set green min threshold
 
-- Example (Configures the "red max threshold" for the WRED profile name "wredprofileabcd". It will create the WRED profile if it does not exist.):
+  Note: The command only can be used to configure the existed WRED profile and being bound to queue. Not support to create WRED profile and only limited fields can be configured. 
+
+  Firstly, create a json file (here named ecn.json as an example) which includes a WRED profile (e.g., AZURE_LOSSLESS) and bind to Ethernet0 queue 3 and Ethernet 4 queue4.
+
+  - ecn.json:
+    ```
+    "WRED_PROFILE": {
+        "AZURE_LOSSLESS": {
+            "wred_green_enable": "true",
+            "green_min_threshold": "1248",
+            "green_max_threshold": "1872",
+            "green_drop_probability": "25",
+            "wred_yellow_enable": "true",
+            "yellow_min_threshold": "1456",
+            "yellow_max_threshold": "1872",
+            "yellow_drop_probability": "50",
+            "wred_red_enable": "true",
+            "red_max_threshold": "2097152",
+            "red_min_threshold": "2097152",
+            "red_drop_probability": "75",
+            "ecn": "ecn_all"
+        }
+    },
+    "QUEUE": {
+        "Ethernet0|3": {
+            "wred_profile": "[WRED_PROFILE|AZURE_LOSSLESS]"
+        },
+        "Ethernet4|4": {
+            "wred_profile": "[WRED_PROFILE|AZURE_LOSSLESS]"
+        }
+    }
+    ```
+
+  And then, use sonic-cfggen command to load json file to create WRED profile and apply to queue.
+
+  - Example:
+    ```
+    admin@sonic:~$ sudo sonic-cfggen -w -j ecn.json
+    ```
+
+The following example shows how to set red max threshold 100 of profile AZURE_LOSSLESS.
+- Example: Modify the red max threshold in profile 'AZURE_LOSSLESS':
   ```
-  admin@sonic:~$ sudo config ecn -profile wredprofileabcd -rmax 100
+  admin@sonic:~$ sudo config ecn -profile AZURE_LOSSLESS -rmax 100
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#ecn)
