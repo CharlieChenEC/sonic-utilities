@@ -1203,7 +1203,7 @@ This section explains the various show commands and configuration commands avail
 
 **show acl table**
 
-This command displays either all the ACL tables that are configured or only the specified "TABLE_NAME".
+This command displays either all the ACL tables that are configured or only the specified "table_name".
 Output from the command displays the table name, type of the table, the list of interface(s) to which the table is bound and the description about the table.
 
 - Usage:
@@ -1217,44 +1217,42 @@ Output from the command displays the table name, type of the table, the list of 
   Name      Type       Binding          Description      Stage
   --------  ---------  ---------------  ---------------- -------
   EVERFLOW  MIRROR     Ethernet16       EVERFLOW         ingress
-                       Ethernet96
-                       Ethernet108
-                       Ethernet112
-                       PortChannel0001
-                       PortChannel0002
+  					 Ethernet96
+  					 Ethernet108
+  					 Ethernet112
+  					 PortChannel0001
+  					 PortChannel0002
   SNMP_ACL  CTRLPLANE  SNMP             SNMP_ACL         ingress
   DT_ACL_T1 L3         Ethernet0        DATA_ACL_TABLE_1 egress
-                       Ethernet4
-                       Ethernet112
-                       Ethernet116
+  					 Ethernet4
+  					 Ethernet112
+  					 Ethernet116
   SSH_ONLY  CTRLPLANE  SSH              SSH_ONLY         ingress
   ```
 
 **show acl rule**
 
-This command displays all the ACL rules present in all the ACL tables or only the rules present in specified table "TABLE_NAME" or only the rule matching the RULE_ID option.
+This command displays all the ACL rules present in all the ACL tables or only the rules present in specified table "table_name" or only the rule matching the rule_name option.
 Output from the command gives the following information about the rules
 1) Table name - ACL table name to which the rule belongs to.
-2) Rule name - ACL rule name
+2) Rule name - ACL rule name.
 3) Priority - Priority for this rule.
 4) Action - Action to be performed if the packet matches with this ACL rule.
+    - It can be:
+      - "DROP"/"FORWARD"("ACCEPT" for control plane ACL)
+      - "REDIRECT: redirect-object" for redirect rule, where "redirect-object" is either:
+        -  physical interface name, e.g. "Ethernet10"
+        -  port channel name, e.g. "PortChannel0002"
+        -  next-hop IP address, e.g. "10.0.0.1"
+        -  next-hop group set of IP addresses with comma seperator, e.g. "10.0.0.1,10.0.0.3"
+      - "MIRROR INGRESS|EGRESS: session-name" for mirror rules, where "session-name" refers to mirror session
+    - Users can choose to have a default permit rule or default deny rule. In case of default "deny all" rule, add the permitted rules on top of the deny rule. In case of the default "permit all" rule, users can add the deny rules on top of it. If users have not confgured any rule, SONiC allows all traffic (which is "permit all").
 
-It can be:
-- "DROP"/"FORWARD"("ACCEPT" for control plane ACL)
-- "REDIRECT: redirect-object" for redirect rule, where "redirect-object" is either:
-    -  physical interface name, e.g. "Ethernet10"
-    -  port channel name, e.g. "PortChannel0002"
-    -  next-hop IP address, e.g. "10.0.0.1"
-    -  next-hop group set of IP addresses with comma seperator, e.g. "10.0.0.1,10.0.0.3"
-- "MIRROR INGRESS|EGRESS: session-name" for mirror rules, where "session-name" refers to mirror session
-
-Users can choose to have a default permit rule or default deny rule. In case of default "deny all" rule, add the permitted rules on top of the deny rule. In case of the default "permit all" rule, users can add the deny rules on top of it. If users have not confgured any rule, SONiC allows all traffic (which is "permit all").
-
-5) Match  - The fields from the packet header that need to be matched against the same present in the incoming traffic.
+5) Match - The fields from the packet header that need to be matched against the same present in the incoming traffic.
 
 - Usage:
   ```
-  show acl rule [<table_name>] [<rule_id>]
+  show acl rule [<table_name> [<rule_name>]]
   ```
 
 - Example:
@@ -1278,8 +1276,62 @@ Users can choose to have a default permit rule or default deny rule. In case of 
 
 ### ACL config commands
 This sub-section explains the list of configuration options available for ACL module.
-Note that there is no direct command to add or delete or modify the ACL table and ACL rule.
-Existing ACL tables and ACL rules can be updated by specifying the ACL rules in json file formats and configure those files using this CLI command.
+
+**config acl add table**
+
+This command is used to add ACL table.
+
+- Usage:
+  ```
+  config acl add table <table_name> <table_type> [(-d | --description) <description>] [(-p | --ports) <interfaces>] [(-s | --stage) (ingress | egress)]
+  ```
+
+  - Parameters
+	- table_name: ACL table name.
+	- table_type: ACL table type.
+      - L3 - IPv4 ACL.
+      - L3V6 - IPv6 ACL.
+      - MIRROR - IPv4 ACL use for mirroring packet.
+      - MIRRORV6 - IPv6 ACL use for mirroring packet.
+	- description: The description, default is ACL table name.
+	- ports: The interface bind to the ACL table.
+      - Support Ethernet, PortChannel, VLAN for ingress stage. Ethernet for egress.
+      - For configure multiple ports, using comma to separate each port.
+      - Default is all front Ethernet and PortChannel ports.
+      - Mix VLAN to Ethernet or PortChannel is not allowed.
+	- stage: The stage. The default value is ingress.
+
+The following example shows create a IPv4 ACL DATA_L3 and bind it to Ethernet0 and Ethernet4 at ingress direction.
+- Example:
+  ```
+  admin@sonic:~$ sudo config acl add table DATA_L3 L3 --description "L3 table" --ports "Ethernet0,Ethernet4" --stage "ingress"
+  ```
+
+The following example shows create a IPv6 ACL DATA_L3V6 and bind it to PortChannel0001 and PortChannel0002 at ingress direction.
+- Example:
+  ```
+  admin@sonic:~$ sudo config acl add table DATA_L3V6 L3V6 --description "L3V6 table" --ports "PortChannel0001,PortChannel0002" --stage "ingress"
+  ```
+
+**CAUTION: The system will crash while the usage of TCAM reaches the limit of system hardware resource. The usage of the ACL table is hardware dependent. For more detail, please refer to ACL HLD.**
+
+**config acl remove table**
+
+This command is used to delete ACL table.
+
+- Usage:
+  ```
+  config acl remove table <table_name>
+  ```
+
+Parameters
+- table_name: The ACL table name.
+
+- Example:
+  ```
+  admin@sonic:~$ sudo config acl remove table DATA_L3
+  admin@sonic:~$ sudo config acl remove table DATA_L3V6
+  ```
 
 **config acl update full**
 
@@ -1287,17 +1339,13 @@ This command is to update the rules in all the tables or in one specific table i
 
 The command does not modify anything in the list of acl tables. It modifies only the rules present in those pre-existing tables.
 
-In order to create acl tables, either follow the config_db.json method or minigraph method to populate the list of ACL tables.
-
-After creating tables, either the config_db.json method or the minigraph method or the CLI method (explained here) can be used to populate the rules in those ACL tables.
-
 This command updates only the ACL rules and it does not disturb the ACL tables; i.e. the output of "show acl table" is not alterted by using this command; only the output of "show acl rule" will be changed after this command.
 
 When "--session_name" optional argument is specified, command sets the session_name for the ACL table with this mirror session name. It fails if the specified mirror session name does not exist.
 
 When "--mirror_stage" optional argument is specified, command sets the mirror action to ingress/egress based on this parameter. By default command sets ingress mirror action in case argument is not specified.
 
-When the optional argument "max_priority"  is specified, each rule’s priority is calculated by subtracting its “sequence_id” value from the “max_priority”. If this value is not passed, the default “max_priority” 10000 is used.
+When the optional argument "max_priority" is specified, each rule's priority is calculated by subtracting its "sequence_id" value from the "max_priority". If this value is not passed, the default "max_priority" 10000 is used.
 
 - Usage:
   ```
@@ -1305,45 +1353,143 @@ When the optional argument "max_priority"  is specified, each rule’s priority 
   ```
 
   - Parameters:
-    - table_name: Specifiy the name of the ACL table to load. Example: config acl update full "--table_name DT_ACL_T1  /etc/sonic/acl_table_1.json"
-    - session_name: Specifiy the name of the ACL session to load. Example: config acl update full "--session_name mirror_ses1 /etc/sonic/acl_table_1.json"
-    - priority_value: Specify the maximum priority to use when loading ACL rules. Example: config acl update full "--max-priority 100  /etc/sonic/acl_table_1.json"
-
-    *NOTE 1: All these optional parameters should be inside double quotes. If none of the options are provided, double quotes are not required for specifying filename alone.*
-    *NOTE 2: Any number of optional parameters can be configured in the same command.*
+    - (Not Support) table_name: ACL table name.
+	- (Not Support) session_name: Mirror session name.
+	  - The command with none exist session will not be active and get an error message.
+    - (Not Support) mirror_stage: The mirror session stage, default is ingress.
+	  - Egress mirror is not support.
+	- (Not Support) max_priority: The maximum priority, default is 10000.
+	  - All rules priority should less than max_priority.
+	- acl_json_file_name: A json file of acl rule configuration.
+	  - The format is following openconfig-acl.
 
 - Examples:
   ```
-  admin@sonic:~$ sudo config acl update full /etc/sonic/acl_full_snmp_1_2_ssh_4.json
-  admin@sonic:~$ sudo config acl update full "--table_name SNMP-ACL /etc/sonic/acl_full_snmp_1_2_ssh_4.json"
-  admin@sonic:~$ sudo config acl update full "--session_name everflow0 /etc/sonic/acl_full_snmp_1_2_ssh_4.json"
+  admin@sonic:~$ sudo config acl update full acl_rule_L3_scrip_dstip.json
+  admin@sonic:~$ sudo config acl update full --table_name DATA_L3 --max_priority 1000 acl_rule_L3_scrip_dstip.json
+  admin@sonic:~$ sudo config acl update full --session_name flow_local_l3 --mirror_stage ingress acl_rule_L3_mirror_session.json
   ```
 
-  This command will remove all rules from all the ACL tables and insert all the rules present in this input file.
-  Refer the example file [acl_full_snmp_1_2_ssh_4.json](#) that adds two rules for SNMP (Rule1 and Rule2) and one rule for SSH (Rule4)
-  Refer an example for input file format [here](https://github.com/Azure/sonic-mgmt/blob/master/ansible/roles/test/files/helpers/config_service_acls.sh)
-  Refer another example [here](https://github.com/Azure/sonic-mgmt/blob/master/ansible/roles/test/tasks/acl/acltb_test_rules_part_1.json)
+The acl_rule_L3_scrip_dstip.json specify that there is a acl rule in table-DATA_L3. The packet with srcip-3.3.3.3 and dstip-4.4.4.4 will forward.
+
+- acl_rule_L3_scrip_dstip.json:
+  ```
+  {
+      "acl":
+      {
+          "acl-sets":
+          {
+              "acl-set":
+              {
+                  "DATA_L3":
+                  {
+                      "acl-entries":
+                      {
+                          "acl-entry":
+                          {
+                              "1":
+                              {
+                                  "ip":
+                                  {
+                                      "config":
+                                      {
+                                          "destination-ip-address": "4.4.4.4/32",
+                                          "source-ip-address": "3.3.3.3/32"
+                                      }
+                                  },
+                                  "config":
+                                  {
+                                      "sequence-id": 1
+                                  },
+                                  "actions":
+                                  {
+                                      "config":
+                                      {
+                                          "forwarding-action": "ACCEPT"
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+The acl_rule_L3_mirror_session.json specify that there is a acl rule in table-DATA_L3. The packet with dscp-8 will mirror.
+
+- acl_rule_L3_mirror_session.json:
+  ```
+  {
+      "acl":
+      {
+          "acl-sets":
+          {
+              "acl-set":
+              {
+                  "DATA_L3":
+                  {
+                      "acl-entries":
+                      {
+                          "acl-entry":
+                          {
+                              "1":
+                              {
+                                  "ip":
+                                  {
+                                      "config":
+                                      {
+                                          "dscp": 8
+                                      }
+                                  },
+                                  "config":
+                                  {
+                                      "sequence-id": 1
+                                  },
+                                  "actions":
+                                  {
+                                      "config":
+                                      {
+                                          "forwarding-action": "ACCEPT"
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
+  ```
+
+This command will remove all rules from all the ACL tables and insert all the rules present in this input file.
+
+**NOTE: All optional parameters(--table_name, --session_name, --mirror_stage, --max_priority) are not support in acl CLI. The command will not be active if include these parameters and will get invalid error parameter message.**
 
 **config acl update incremental**
 
-This command is used to perform incremental update of ACL rule table. This command gets existing rules from Config DB and compares with rules specified in input file and performs corresponding modifications.
+This command is used to perform incremental update of ACL rule table - gets existing ACL rules from Config DB, compares with rules specified in input file, and performs corresponding modifications.
 
-With respect to DATA ACLs, the command does not assume that new dataplane ACLs can be inserted in betweeen by shifting existing ACLs in all ASICs. Therefore, this command performs a full update on dataplane ACLs.
+With respect to DATA ACLs, this command does not assume that new data plane ACLs can be inserted in between by shifting existing ACLs in all ASICs. Therefore, this command performs a full update on data plane ACLs.
 With respect to control plane ACLs, this command performs an incremental update.
-If we assume that "file1.json" is the already loaded ACL rules file and if "file2.json" is the input file that is passed as parameter for this command, the following requirements are valid for the input file.
+Assume that "file1.json" is the already loaded ACL rules file and "file2.json" is the input file which passed as parameter for this command, the following requirements are valid for the input file.
 1) First copy the file1.json to file2.json.
-2) Remove the unwanted ACL rules from file2.json
+2) Remove the unwanted ACL rules from file2.json.
 3) Add the newly required ACL rules into file2.json.
 4) Modify the existing ACL rules (that require changes) in file2.json.
 
-NOTE: If any ACL rule that is already available in file1.json is required even after this command execution, such rules should remain unalterted in file2.json. Don't remove them.
-Note that "incremental" is working like "full".
+NOTE:
+
+If any ACL rule that is already available in file1.json is required even after this command execution, such rules should remain unalterted in file2.json. Don't remove them. Note that "incremental" is working like "full".
 
 When "--session_name" optional argument is specified, command sets the session_name for the ACL table with this mirror session name. It fails if the specified mirror session name does not exist.
 
 When "--mirror_stage" optional argument is specified, command sets the mirror action to ingress/egress based on this parameter. By default command sets ingress mirror action in case argument is not specified.
 
-When the optional argument "max_priority"  is specified, each rule’s priority is calculated by subtracting its “sequence_id” value from the “max_priority”. If this value is not passed, the default “max_priority” 10000 is used.
+When the optional argument "max_priority" is specified, each rule's priority is calculated by subtracting its "sequence_id" value from the "max_priority". If this value is not passed, the default "max_priority" 10000 is used.
 
 - Usage:
   ```
@@ -1351,26 +1497,24 @@ When the optional argument "max_priority"  is specified, each rule’s priority 
   ```
 
   - Parameters:
-    - table_name: Specifiy the name of the ACL table to load. Example: config acl update full "--table_name DT_ACL_T1  /etc/sonic/acl_table_1.json"
-    - session_name: Specifiy the name of the ACL session to load. Example: config acl update full "--session_name mirror_ses1 /etc/sonic/acl_table_1.json"
-    - priority_value: Specify the maximum priority to use when loading ACL rules. Example: config acl update full "--max-priority 100  /etc/sonic/acl_table_1.json"
-
-    *NOTE 1: All these optional parameters should be inside double quotes. If none of the options are provided, double quotes are not required for specifying filename alone.*
-    *NOTE 2: Any number of optional parameters can be configured in the same command.*
+    - (Not Support) table_name: ACL table name.
+	- (Not Support) session_name: Mirror session name.
+	  - The command with none exist session will not be active and get an error message.
+	- (Not Support) mirror_stage: The mirror session stage, default is ingress.
+	  - Egress mirror is not support.
+	- (Not Support) max_priority: The maximum priority, default is 10000.
+	  - All rules priority should less than max_priority.
+	- acl_json_file_name: A json file of acl rule configuration.
+	  - The format is following openconfig-acl.
 
 - Examples:
   ```
-  admin@sonic:~$ sudo config acl update incremental /etc/sonic/acl_incremental_snmp_1_3_ssh_4.json
-  ```
-  ```
-  admin@sonic:~$ sudo config acl update incremental "--session_name everflow0 /etc/sonic/acl_incremental_snmp_1_3_ssh_4.json"
+  admin@sonic:~$ sudo config acl update incremental acl_rule_L3_scrip_dstip.json
+  admin@sonic:~$ sudo config acl update incremental --table_name DATA_L3 --max_priority 1000 acl_rule_L3_scrip_dstip.json
+  admin@sonic:~$ sudo config acl update incremental --session_name flow_local_l3 --mirror_stage ingress acl_rule_L3_mirror_session.json
   ```
 
-  Refer the example file [acl_incremental_snmp_1_3_ssh_4.json](#) that adds two rules for SNMP (Rule1 and Rule3) and one rule for SSH (Rule4)
-  When this "incremental" command is executed after "full" command, it has removed SNMP Rule2 and added SNMP Rule3 in the example.
-  File "acl_full_snmp_1_2_ssh_4.json" has got SNMP Rule1, SNMP Rule2 and SSH Rule4.
-  File "acl_incremental_snmp_1_3_ssh_4.json" has got SNMP Rule1, SNMP Rule3 and SSH Rule4.
-  This file is created by copying the file "acl_full_snmp_1_2_ssh_4.json" to "acl_incremental_snmp_1_3_ssh_4.json" and then removing SNMP Rule2 and adding SNMP Rule3.
+**NOTE: All optional parameters(--table_name, --session_name, --mirror_stage, --max_priority) are not support in acl CLI. The command will not be active if include these parameters and will get invalid parameter error message.**
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#acl)
 
