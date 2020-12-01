@@ -1033,12 +1033,14 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#aaa--t
 
 **show tacacs**
 
-This command displays the global configuration fields and the list of all tacacs servers and their correponding configurations.
+This command displays the global configuration fields and the list of all tacacs servers and their corresponding configurations.
 
 - Usage:
   ```
   show tacacs
   ```
+
+The below command is to show TACACS+ configuration.
 
 - Example:
   ```
@@ -1061,8 +1063,7 @@ This command displays the global configuration fields and the list of all tacacs
 
 #### TACACS+ config commands
 
-This sub-section explains the command "config tacacs" and its sub-commands that are used to configure the following tacacs+ parameters.
-Some of the parameters like authtype, passkey and timeout can be either configured at per server level or at global level (global value will be applied if there no server level configuration)
+This sub-section explains the command "config tacacs" and its sub-commands that are used to configure the following tacacs+ parameters. Some of the parameters like authtype, passkey and timeout can be either configured at per server level or at global level (global value will be applied if there no server level configuration)
 
 1) Add/Delete the tacacs+ server details.
 2) authtype - global configuration that is applied to all servers if there is no server specific configuration.
@@ -1072,11 +1073,7 @@ Some of the parameters like authtype, passkey and timeout can be either configur
 
 **config tacacs add**
 
-This command is used to add a TACACS+ server to the tacacs server list.
-Note that more than one tacacs+ (maximum of seven) can be added in the device.
-When user tries to login, tacacs client shall contact the servers one by one.
-When any server times out, device will try the next server one by one based on the priority value configured for that server.
-When this command is executed, the configured tacacs+ server addresses are updated in /etc/pam.d/common-auth-sonic configuration file which is being used by tacacs service.
+This command is used to add a TACACS+ server to the tacacs server list. Note that more than one tacacs+ (maximum of seven) can be added in the device. When user tries to login, tacacs client shall contact the servers one by one. When any server times out, device will try the next server one by one based on the priority value configured for that server. When this command is executed, the configured tacacs+ server addresses are updated in /etc/pam.d/common-auth-sonic configuration file which is being used by tacacs service.
 
 - Usage:
   ```
@@ -1085,20 +1082,30 @@ When this command is executed, the configured tacacs+ server addresses are updat
 
   - Parameters:
     - ip_address: TACACS+ server IP address.
-    - timeout: Transmission timeout interval in seconds, range 1 to 60, default 5
-    - key: Shared secret
-    - type: Authentication type, "chap" or "pap" or "mschap" or "login", default is "pap".
-    - port: TCP port range is 1 to 65535, default 49
-    - pri: Priority, priority range 1 to 64, default 1.
-    - use-mgmt-vrf: This means that the server is part of Management vrf, default is "no vrf"
+    - timeout: Transmission timeout interval in seconds,
+      - range 1 to 60,
+      - default 5
+    - key: Shared secret type: Authentication
+    - type, "chap" or "pap" or "mschap" or "login",
+      - default is "pap". port: TCP
+      - "mschap" is not supported now and "pap" is used instead if authtype is configured as "mschap".
+    - port range is 1 to 65535
+      - default 49
+    - pri: Priority, priority
+      - range 1 to 64,
+      - default 1.
+    - use-mgmt-vrf: This means that the server is part of Management vrf,
+      - default is "no vrf"
 
+The below command is to add a new TACACS+ server with the prarmeters.
 
 - Example:
   ```
   admin@sonic:~$ sudo config tacacs add 10.11.12.13 -t 10 -k testing789 -a mschap -o 50 -p 9
   ```
 
-  - Example Server Configuration in /etc/pam.d/common-auth-sonic configuration file:
+  - Example Server Configuration in /etc/pam.d/common-auth-sonic configuration file
+
     ```
     auth    [success=done new_authtok_reqd=done default=ignore]     pam_tacplus.so server=10.11.12.14:50 secret=testing789 login=mschap timeout=10  try_first_pass
     auth    [success=done new_authtok_reqd=done default=ignore]     pam_tacplus.so server=10.11.12.24:50 secret=testing789 login=mschap timeout=987654321098765433211
@@ -1120,6 +1127,8 @@ This command is used to delete the tacacs+ servers configured.
   config tacacs delete <ip_address>
   ```
 
+The below example is to delete the TACACS+ server by IP address.
+
 - Example:
   ```
   admin@sonic:~$ sudo config tacacs delete 10.11.12.13
@@ -1127,13 +1136,14 @@ This command is used to delete the tacacs+ servers configured.
 
 **config tacacs authtype**
 
-This command is used to modify the global value for the TACACS+ authtype.
-When user has not configured server specific authtype, this global value shall be used for that server.
+This command is used to modify the global value for the TACACS+ authtype. When user has not configured server specific authtype, this global value shall be used for that server.
 
 - Usage:
   ```
   config tacacs authtype (chap | pap | mschap | login)
   ```
+
+The below command is to configure global value for authtype.
 
 - Example:
   ```
@@ -1142,13 +1152,14 @@ When user has not configured server specific authtype, this global value shall b
 
 **config tacacs default**
 
-This command is used to reset the global value for authtype or passkey or timeout to default value.
-Default for authtype is "pap", default for passkey is EMPTY_STRING and default for timeout is 5 seconds.
+This command is used to reset the global value for authtype or passkey or timeout to default value. Default for authtype is "pap", default for passkey is EMPTY_STRING and default for timeout is 5 seconds.
 
 - Usage:
   ```
   config tacacs default (authtype | passkey | timeout)
   ```
+
+The below command is to reset global value for authtype.
 
 - Example (This will reset the global authtype back to the default value "pap"):
   ```
@@ -1157,13 +1168,14 @@ Default for authtype is "pap", default for passkey is EMPTY_STRING and default f
 
 **config tacacs passkey**
 
-This command is used to modify the global value for the TACACS+ passkey.
-When user has not configured server specific passkey, this global value shall be used for that server.
+This command is used to modify the global value for the TACACS+ passkey. When user has not configured server specific passkey, this global value shall be used for that server.
 
 - Usage:
   ```
   config tacacs passkey <pass_key>
   ```
+
+The below command is to configure global value for passkey.
 
 - Example:
   ```
@@ -1172,19 +1184,14 @@ When user has not configured server specific passkey, this global value shall be
 
 **config tacacs timeout**
 
-This command is used to modify the global value for the TACACS+ timeout.
-When user has not configured server specific timeout, this global value shall be used for that server.
-
+This command is used to modify the global value for the TACACS+ timeout. When user has not configured server specific timeout, this global value shall be used for that server.
 
 - Usage:
   ```
-  config tacacs [default] timeout [<timeout_value_in_seconds>]
+  config tacacs timeout <timeout_value_in_seconds>
   ```
 
-  - Options:
-    - Valid values for timeout is 1 to 60 seconds.
-    - When the optional keyword "default" is specified, timeout_value_in_seconds parameter wont be used; default value of 5 is used.
-    - Configuration using the keyword "default" is introduced in 201904 release.
+The below command is to configure global value for timeout.
 
 - Example: To configure non-default timeout value
   ```
