@@ -127,6 +127,7 @@
 * [VxLAN & Vnet](#vxlan--vnet)
   * [VxLAN](#vxlan)
     * [VxLAN show commands](#vxlan-show-commands)
+    * [VxLAN configuration commands](#vxlan-configuration-commands)
   * [Vnet](#vnet)
     * [Vnet show commands](#vnet-show-commands)
 * [Warm Reboot](#warm-reboot)
@@ -8746,9 +8747,29 @@ Go Back To [Beginning of the document](#) or [Beginning of this section](#vlan--
 
 #### VxLAN show commands
 
+**show vxlan interface**
+
+This command displays brief  VTEP information.
+
+- Usage:
+
+  ```
+  show vxlan interface
+  ```
+
+- Example:
+
+  ```
+  admin@sonic:~$ show vxlan interface
+  VTEP Information:
+
+          VTEP Name : vtep, SIP  : 10.1.0.32
+          Source interface  : Loopback0
+  ```
+
 **show vxlan tunnel**
 
-This command displays brief information about all the vxlans configured in the device. It displays the vxlan tunnel name, source IP address, destination IP address (if configured), tunnel map name and mapping.
+This command displays brief information about all the vxlans configured in the device. It displays source IP address, destination IP address , creation source and OperStatus.
 
 - Usage:
 
@@ -8760,30 +8781,230 @@ This command displays brief information about all the vxlans configured in the d
 
   ```
   admin@sonic:~$ show vxlan tunnel
-  vxlan tunnel name    source ip    destination ip    tunnel map name    tunnel map mapping(vni -> vlan)
-  -------------------  -----------  ----------------  -----------------  ---------------------------------
-  tunnel1              10.10.10.10
-  tunnel2              10.10.10.10  20.10.10.10       tmap1              1234 -> 100
-  tunnel3              10.10.10.10  30.10.10.10       tmap2              1235 -> 200
+   +---------+---------+-------------------+--------------+
+   | SIP     | DIP     | Creation Source   | OperStatus   |
+   +=========+=========+===================+==============+
+   | 2.2.2.2 | 4.4.4.4 | EVPN              | oper_up      |
+   +---------+---------+-------------------+--------------+
+   | 2.2.2.2 | 3.3.3.3 | EVPN              | oper_up      |
+   +---------+---------+-------------------+--------------+
+   Total count : 2
   ```
 
-**show vxlan name <vxlan_name>**
+**show vxlan vlanvnimap**
 
-This command displays <vlan_name> configuration.
+This command displays all the VLAN VNI mappings.
 
 - Usage:
 
   ```
-  show vxlan name <vxlan_name>
+  show vxlan vlanvnimap
   ```
 
 - Example:
 
   ```
-  admin@sonic:~$ show vxlan name tunnel3
-  vxlan tunnel name    source ip    destination ip    tunnel map name    tunnel map mapping(vni -> vlan)
-  -------------------  -----------  ----------------  -----------------  ---------------------------------
-  tunnel3              10.10.10.10  30.10.10.10       tmap2              1235 -> 200
+  admin@sonic:~$ show vxlan vlanvnimap
+  +-------+-------+
+  | VRF   |   VNI |
+  +=======+=======+
+  | Vrf-1 |   104 |
+  +-------+-------+
+  Total count : 1
+  ```
+
+**show vxlan vrfvnimap**
+
+This command displays all the VRF VNI mappings.
+
+- Usage:
+
+  ```
+  show vxlan vrfvnimap
+  ```
+
+- Example:
+
+  ```
+  admin@sonic:~$ show vxlan vrfvnimap
+  +-------+-------+
+  | VRF   |   VNI |
+  +=======+=======+
+  | Vrf-1 |   104 |
+  +-------+-------+
+  Total count : 1
+  ```
+
+**show vxlan remote_mac <remoteip/all>**
+
+This command displays all the MACs learnt from the specified remote ip or all the remotes for all vlans . (APP DB view)
+
+- Usage:
+
+  ```
+  show vxlan remote_mac <remoteip/all>
+  ```
+
+- Example:
+
+  ```
+  admin@sonic:~$ show vxlan remote_mac all
+   +---------+-------------------+--------------+-------+--------+
+   | VLAN    | MAC               | RemoteVTEP   |   VNI | Type   |
+   +=========+===================+==============+=======+========+
+   | Vlan101 | 00:00:00:00:00:01 | 4.4.4.4      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:02 | 3.3.3.3      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:03 | 4.4.4.4      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:04 | 4.4.4.4      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:05 | 4.4.4.4      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:99 | 3.3.3.3      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   Total count : 6
+
+  admin@sonic:~$ show vxlan remote_mac 3.3.3.3
+   +---------+-------------------+--------------+-------+--------+
+   | VLAN    | MAC               | RemoteVTEP   |   VNI | Type   |
+   +=========+===================+==============+=======+========+
+   | Vlan101 | 00:00:00:00:00:02 | 3.3.3.3      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   | Vlan101 | 00:00:00:00:00:99 | 3.3.3.3      |  1001 | static |
+   +---------+-------------------+--------------+-------+--------+
+   Total count : 2
+  ```
+
+**show vxlan remote_vni <remoteip/all>**
+
+This command displays all the VLANs learnt from the specified remote ip or all the remotes for all vlans. (APP DB view)
+
+- Usage:
+
+  ```
+  show vxlan remote_vni <remoteip/all>
+  ```
+
+- Example:
+
+  ```
+  admin@sonic:~$ show vxlan remote_vni all
+   +---------+--------------+-------+
+   | VLAN    | RemoteVTEP   |   VNI |
+   +=========+==============+=======+
+   | Vlan101 | 3.3.3.3      |  1001 |
+   +---------+--------------+-------+
+   | Vlan101 | 4.4.4.4      |  1001 |
+   +---------+--------------+-------+
+   Total count : 2
+
+  admin@sonic:~$ show vxlan remote_vni 3.3.3.3
+   +---------+--------------+-------+
+   | VLAN    | RemoteVTEP   |   VNI |
+   +=========+==============+=======+
+   | Vlan101 | 3.3.3.3      |  1001 |
+   +---------+--------------+-------+
+   Total count : 1
+  ```
+
+#### VxLAN configuration commands
+
+**config vxlan add <vtepname> <src_ipv4>**
+
+This command is for VTEP Source IP configuration.  vtepname is a string, src_ipv4 is an IPV4 address in dotted notation A.B.C.D .
+
+- Usage:
+
+  ```
+  config vxlan add <vtepname> <src_ipv4>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan add vtep 1.1.1.1
+  ```
+
+**config vxlan del <vtepname>**
+
+This command deletes VTEP with name vtepname.
+
+- Usage:
+
+  ```
+  config vxlan del <vtepname>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan del vtep
+  ```
+
+**config vxlan evpn_nvo add <nvoname> <vtepname>**
+
+This command add NVO with name nvoname.
+
+- Usage:
+
+  ```
+  config vxlan evpn_nvo add <nvoname> <vtepname>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan evpn_nvo add nvo vtep
+  ```
+
+**config vxlan evpn_nvo del <nvoname> <vtepname>**
+
+This command deletes NVO with name nvoname.
+
+- Usage:
+
+  ```
+  config vxlan evpn_nvo del <nvoname> <vtepname>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan evpn_nvo del nvo vtep
+  ```
+
+**config vxlan map add <vtepname> <vlanid> <vnid>**
+
+This command create VLAN-VNI mapping on vtep with name vtepname.
+
+- Usage:
+
+  ```
+  config vxlan map add <vtepname> <vlanid> <vnid>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan map add vtep 30 3000
+  ```
+
+**config vxlan map del <vtepname> <vlanid> <vnid>**
+
+This command delete VLAN-VNI mapping on vtep with name vtepname.
+
+- Usage:
+
+  ```
+  config vxlan map del <vtepname> <vlanid> <vnid>
+  ```
+
+- Example:
+
+  ```
+  sudo config vxlan map del vtep 30 3000
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#vxlan--vnet)
