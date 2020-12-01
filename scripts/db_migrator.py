@@ -4,12 +4,19 @@ import traceback
 import sys
 import argparse
 import syslog
+import json
+import ast
 from swsssdk import ConfigDBConnector, SonicDBConfig
+from portconfig import get_port_config, get_port_config_file_name, get_breakout_mode
 import sonic_device_util
 
 
 SYSLOG_IDENTIFIER = 'db_migrator'
 
+BRK_CFG_TABLE = 'BREAKOUT_CFG'
+PORT_TABLE = 'PORT'
+INTF_KEY = 'interfaces'
+PARENT_PORT_ENTRY = 'parent_port'
 
 def log_info(msg):
     syslog.openlog(SYSLOG_IDENTIFIER)
@@ -21,6 +28,21 @@ def log_error(msg):
     syslog.openlog(SYSLOG_IDENTIFIER)
     syslog.syslog(syslog.LOG_ERR, msg)
     syslog.closelog()
+
+
+def readJson(filename):
+    # Read 'platform.json' or 'hwsku.json' file
+    try:
+        with open(filename) as fp:
+            try:
+                data = json.load(fp)
+            except json.JSONDecodeError:
+                print("Json file does not exist")
+        data_dict = ast.literal_eval(json.dumps(data))
+        return data_dict
+    except Exception as e:
+        print("error occurred while parsing json:", sys.exc_info()[1])
+        return None
 
 
 class DBMigrator():
@@ -263,6 +285,49 @@ class DBMigrator():
         entry = { self.TABLE_FIELD : version }
         self.configDB.set_entry(self.TABLE_NAME, self.TABLE_KEY, entry)
 
+    def migrate_platform_json(self):
+        """
+        migrate_platform_json will try to get port breakout related info from platform.json and
+        hwsku.json belongs to the current hwsku. If the info is got successfully, it checks
+        that whether all of the expected port breakout attributes are presented. It fills up the
+        missing attributes if found.
+        """
+        device_data = self.configDB.get_table('DEVICE_METADATA')
+        if 'localhost' in device_data.keys():
+            hwsku = device_data['localhost']['hwsku']
+            platform = device_data['localhost']['platform']
+        else:
+            log_error("Trying to get DEVICE_METADATA from DB but doesn't exist, skip migration")
+            return False
+
+        port_config = get_port_config_file_name(hwsku, platform)
+        brkout_table = get_breakout_mode(hwsku, platform, port_config)
+        if brkout_table is not None:
+            data = self.configDB.get_table(BRK_CFG_TABLE)
+            if not bool(data):
+                log_info("Migrating table {} to config_db".format(BRK_CFG_TABLE))
+                for key in brkout_table:
+                    entry = {'brkout_mode': brkout_table[key]['brkout_mode']}
+                    self.configDB.set_entry(BRK_CFG_TABLE, key, entry)
+
+            # deal with parent port attribute
+            port_table = self.configDB.get_table(PORT_TABLE)
+            for key in port_table:
+                if PARENT_PORT_ENTRY not in port_table[key]:
+                   if key in brkout_table.keys():
+                       entry = {PARENT_PORT_ENTRY: key}
+                       self.configDB.mod_entry(PORT_TABLE, key, entry)
+                   else:
+                       #get parent_port from platform.json by comparing lane
+                       port_dict = readJson(port_config)
+                       lane = port_table[key]['lanes'].split(",")[0]
+                       for interface in port_dict[INTF_KEY]:
+                           lanes_list = port_dict[INTF_KEY][interface]['lanes'].split(",")
+                           if lane in lanes_list:
+                               entry = {PARENT_PORT_ENTRY: interface}
+                               self.configDB.mod_entry(PORT_TABLE, key, entry)
+                               break
+
 
     def migrate(self):
         version = self.get_version()
@@ -273,6 +338,9 @@ class DBMigrator():
                 raise Exception('Version migrate from %s stuck in same version' % version)
             version = next_version
 
+        # call self.migrate_platform_json() here intentionally so that it may fill up the
+        # missing port breakout related attributes when possible
+        self.migrate_platform_json()
 
 def main():
     try:
