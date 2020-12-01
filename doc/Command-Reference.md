@@ -7126,8 +7126,6 @@ This command displays the details of Rx & Tx priority-flow-control (pfc) for all
     Ethernet4       0       0       0       0       0       0       0       0
     Ethernet8       0       0       0       0       0       0       0       0
    Ethernet12       0       0       0       0       0       0       0       0
-
-   ...
    ```
 
 
@@ -7145,13 +7143,23 @@ This command displays the status of asymmetric PFC for all interfaces or a given
   show pfc asymmetric [<interface>]
   ```
 
-- Example:
+- Example: Show on factory default
   ```
   admin@sonic:~$ show pfc asymmetric
 
   Interface    Asymmetric
   -----------  ------------
-  Ethernet0    off
+  Ethernet0    N/A
+  Ethernet4    N/A
+  ```
+
+- Example: Show after configured
+  ```
+  admin@sonic:~$ show pfc asymmetric
+
+  Interface    Asymmetric
+  -----------  ------------
+  Ethernet0    on
   Ethernet2    off
   Ethernet4    off
   Ethernet6    off
@@ -7159,13 +7167,18 @@ This command displays the status of asymmetric PFC for all interfaces or a given
   Ethernet10   off
   Ethernet12   off
   Ethernet14   off
+  ```
 
+- Example: Show on specify interface
+  ```
   admin@sonic:~$ show pfc asymmetric Ethernet0
 
   Interface    Asymmetric
   -----------  ------------
   Ethernet0    off
   ```
+
+- NOTE: The factory default of asymmetric PFC is disabled and show as N/A.
 
 **show pfc priority**
 
@@ -7185,15 +7198,20 @@ This command displays the lossless priorities for all interfaces or a given inte
   Ethernet0    3,4
   Ethernet2    3,4
   Ethernet8    3,4
-  Ethernet10   3,4
+  Ethernet10
   Ethernet16   3,4
+  ```
 
+- Example:
+  ```
   admin@sonic:~$ show pfc priority Ethernet0
 
   Interface    Lossless priorities
   -----------  ---------------------
   Ethernet0    3,4
   ```
+
+- NOTE: To enable pfc use the config interface pfc priority command.
 
 #### Queue And Priority-Group
 
@@ -7271,6 +7289,29 @@ Optionally, you can specify an interface name in order to display only that part
 - Example:
   ```
   admin@sonic:~$ show queue counters Ethernet72
+
+        Port    TxQ    Counter/pkts    Counter/bytes    Drop/pkts    Drop/bytes
+  ----------  -----  --------------  ---------------  -----------  ------------
+  Ethernet72    UC0               0                0            0             0
+  Ethernet72    UC1               0                0            0             0
+  Ethernet72    UC2               0                0            0             0
+  Ethernet72    UC3               0                0            0             0
+  Ethernet72    UC4               0                0            0             0
+  Ethernet72    UC5               0                0            0             0
+  Ethernet72    UC6               0                0            0             0
+  Ethernet72    UC7               0                0            0             0
+  Ethernet72    UC8               0                0            0             0
+  Ethernet72    UC9               0                0            0             0
+  Ethernet72    MC0               0                0            0             0
+  Ethernet72    MC1               0                0            0             0
+  Ethernet72    MC2               0                0            0             0
+  Ethernet72    MC3               0                0            0             0
+  Ethernet72    MC4               0                0            0             0
+  Ethernet72    MC5               0                0            0             0
+  Ethernet72    MC6               0                0            0             0
+  Ethernet72    MC7               0                0            0             0
+  Ethernet72    MC8               0                0            0             0
+  Ethernet72    MC9               0                0            0             0
   ```
 
 - NOTE: Queue counters can be cleared by the user with the following command:
@@ -7287,7 +7328,7 @@ This command displays the user watermark for the queues (Egress shared pool occu
   show queue watermark (multicast | unicast)
   ```
 
-- Example:
+- Example: show for unitcast
   ```
   admin@sonic:~$ show queue watermark unicast
   Egress shared pool occupancy per unicast queue:
@@ -7297,9 +7338,41 @@ This command displays the user watermark for the queues (Egress shared pool occu
     Ethernet4      0      0      0      0      0      0      0      0
     Ethernet8      0      0      0      0      0      0      0      0
     Ethernet12     0      0      0      0      0      0      0      0
-
-  admin@sonic:~$ show queue watermark multicast (Egress shared pool occupancy per multicast queue)
   ```
+
+- Example: show for multicast
+  ```
+  admin@sonic:~$ show queue watermark multicast
+  Egress shared pool occupancy per multicast queue:
+         Port    MC10    MC11    MC12    MC13    MC14    MC15    MC16    MC17    MC18    MC19
+  -----------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+    Ethernet0       0       0       0       0       0       0       0       0       0       0
+    Ethernet4     416       0       0       0       0       0       0       0       0       0
+    Ethernet8     416       0       0       0       0       0       0       0       0       0
+   Ethernet12     416       0       0       0       0       0       0       0       0       0
+   Ethernet16     416       0       0       0       0       0       0       0       0       0
+  ```
+
+- NOTE: User shall configure buffer related setting first by **sonic-cfggen** command. **E.g., sonic-cfggen -w -j buffer.json**. The example of buffer configuration file is as the following. Otherwise, an error message **"COUNTERS_BUFFER_POOL_NAME_MAP is empty!"** will be returned when using the show command above.
+  - buffer.json
+    ```
+    BUFFER_POOL: {
+        "ingress_lossless_pool": {
+            "mode": "static",
+            "size": "10875072",
+            "type": "ingress"
+        }
+    },
+    "BUFFER_PROFILE": {
+        "ingress_lossless_profile": {
+            "pool": "[BUFFER_POOL|ingress_lossless_pool]",
+            "size": "1664",
+            "static_th": "0",
+            "xoff": "19968",
+            "xon": "416"
+        }
+    }
+    ```
 
 **show priority-group**
 
@@ -7325,20 +7398,59 @@ This command displays the user watermark or persistent-watermark for the Ingress
 - Example (Ingress headroom per PG):
   ```
   admin@sonic:~$ show priority-group watermark headroom
+  Ingress headroom per PG:
+         Port    PG0    PG1    PG2    PG3    PG4    PG5    PG6    PG7
+  -----------  -----  -----  -----  -----  -----  -----  -----  -----
+    Ethernet0      0      0      0      0      0      0      0      0
+    Ethernet4      0      0      0      0      0      0      0      0
+    Ethernet8      0      0      0      0      0      0      0      0
   ```
 
 - Example (Ingress shared pool occupancy per PG):
   ```
   admin@sonic:~$ show priority-group persistent-watermark shared
+  Ingress shared pool occupancy per PG:
+         Port    PG0    PG1    PG2    PG3    PG4    PG5    PG6    PG7
+  -----------  -----  -----  -----  -----  -----  -----  -----  -----
+    Ethernet0      0      0      0      0      0      0      0      0
+    Ethernet4      0      0      0      0      0      0      0      0
+    Ethernet8      0      0      0      0      0      0      0      0
   ```
 
 - Example (Ingress headroom per PG):
   ```
   admin@sonic:~$ show priority-group persistent-watermark headroom
+  Ingress headroom per PG:
+         Port    PG0    PG1    PG2    PG3    PG4    PG5    PG6    PG7
+  -----------  -----  -----  -----  -----  -----  -----  -----  -----
+    Ethernet0      0      0      0      0      0      0      0      0
+    Ethernet4      0      0      0      0      0      0      0      0
+    Ethernet8      0      0      0      0      0      0      0      0
   ```
 
 In addition to user watermark("show queue|priority-group watermark ..."), a persistent watermark is available.
 It hold values independently of user watermark. This way user can use "user watermark" for debugging, clear it, etc, but the "persistent watermark" will not be affected.
+
+- NOTE: User shall configure buffer related setting first by **sonic-cfggen** command. **E.g., sonic-cfggen -w -j buffer.json**. The example of buffer configuration file is as the following. Otherwise, an error message **"COUNTERS_BUFFER_POOL_NAME_MAP is empty!"** will be returned when using the show command above.
+  - buffer.json:
+    ```
+    BUFFER_POOL: {
+        "ingress_lossless_pool": {
+            "mode": "static",
+            "size": "10875072",
+            "type": "ingress"
+        }
+    },
+    "BUFFER_PROFILE": {
+        "ingress_lossless_profile": {
+            "pool": "[BUFFER_POOL|ingress_lossless_pool]",
+            "size": "1664",
+            "static_th": "0",
+            "xoff": "19968",
+            "xon": "416"
+        }
+    }
+    ```
 
 **show queue persistent-watermark**
 
@@ -7353,17 +7465,22 @@ This command displays the user persistet-watermark for the queues (Egress shared
   ```
   admin@sonic:~$ show queue persistent-watermark unicast
   Egress shared pool occupancy per unicast queue:
-         Port    UC0    UC1    UC2    UC3    UC4    UC5    UC6    UC7
-  -----------  -----  -----  -----  -----  -----  -----  -----  -----
-    Ethernet0    N/A    N/A    N/A    N/A    N/A    N/A    N/A    N/A
-    Ethernet4    N/A    N/A    N/A    N/A    N/A    N/A    N/A    N/A
-    Ethernet8    N/A    N/A    N/A    N/A    N/A    N/A    N/A    N/A
-    Ethernet12   N/A    N/A    N/A    N/A    N/A    N/A    N/A    N/A
+         Port    UC0    UC1    UC2    UC3    UC4    UC5    UC6    UC7    UC8    UC9
+  -----------  -----  -----  -----  -----  -----  -----  -----  -----  -----  -----
+    Ethernet0      0      0      0      0      0      0      0      0      0      0
+    Ethernet4    416      0      0      0      0      0      0      0      0      0
+    Ethernet8    416      0      0      0      0      0      0      0      0      0
   ```
 
-- Example (Egress shared pool occupancy per multicast queue):
+- Example: (Egress shared pool occupancy per multicast queue)
   ```
   admin@sonic:~$ show queue persistent-watermark multicast
+  Egress shared pool occupancy per multicast queue:
+         Port    MC10    MC11    MC12    MC13    MC14    MC15    MC16    MC17    MC18    MC19
+  -----------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+    Ethernet0       0       0       0       0       0       0       0       0       0       0
+    Ethernet4       0       0       0       0       0       0       0       0       0       0
+    Ethernet8       0       0       0       0       0       0       0       0       0       0
   ```
 
 - NOTE: Both "user watermark" and "persistent watermark" can be cleared by user:
@@ -7378,10 +7495,31 @@ This command displays the user persistet-watermark for the queues (Egress shared
   admin@sonic:~$ sonic-clear priority-group persistent-watermark headroom
   ```
 
+- NOTE: User shall configure buffer related setting first by **sonic-cfggen** command. **E.g., sonic-cfggen -w -j buffer.json**. The example of buffer configuration file is as the following. Otherwise, an error message **"COUNTERS_BUFFER_POOL_NAME_MAP is empty!"** will be returned when using the show command above.
+  - buffer.json:
+    ```
+    BUFFER_POOL: {
+        "ingress_lossless_pool": {
+            "mode": "static",
+            "size": "10875072",
+            "type": "ingress"
+        }
+    },
+    "BUFFER_PROFILE": {
+        "ingress_lossless_profile": {
+            "pool": "[BUFFER_POOL|ingress_lossless_pool]",
+            "size": "1664",
+            "static_th": "0",
+            "xoff": "19968",
+            "xon": "416"
+        }
+    }
+    ```
+
 
 ### QoS config commands
 
-**config qos clear**
+**(Not supported) config qos clear**
 
 This command is used to clear all the QoS configuration from all the following QOS Tables in ConfigDB.
 
@@ -7410,7 +7548,9 @@ This command is used to clear all the QoS configuration from all the following Q
   admin@sonic:~$ sudo config qos clear
   ```
 
-**config qos reload**
+- NOTE: **Due to the incomplete implementation of "config qos clear" this command is a malfunction**.
+
+**(Not supported) config qos reload**
 
 This command is used to reload the QoS configuration.
 QoS configuration has got two sets of configurations.
@@ -7456,6 +7596,48 @@ Some of the example QOS configurations that users can modify are given below.
   In this example, it uses the buffers.json.j2 file and qos.json.j2 file from platform specific folders.
   When there are no changes in the platform specific configutation files, they internally use the file "/usr/share/sonic/templates/buffers_config.j2" and "/usr/share/sonic/templates/qos_config.j2" to generate the configuration.
   ```
+
+- NOTE: **Due to the incomplete implementation of "config qos clear" this command is a malfunction**.
+
+**config interface pfc asymmetric**
+
+This command is used for setting the asymmetric PFC for an interface to either "on" or "off".
+
+- Usage:
+  ```
+  config interface pfc asymmetric <interface_name> (on | off)
+  ```
+
+The following example shows how to enable PFC asymmetric on Ethernet0.
+- Example:
+  ```
+  admin@sonic:~$ sudo config interface pfc asymmetric Ethernet0 on
+  ```
+
+**config interface pfc priority**
+
+This command is used to set PFC on a given priority of a given interface to either "on" or "off".
+
+- Usage:
+```
+config interface pfc priority <interface_name> (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7) (on | off)
+```
+
+The following example shows how to enable PFC priority 7 on Ethernet0.
+- Example:
+  ```
+  admin@sonic:~$ sudo config interface pfc priority Ethernet0 7 on
+  ```
+
+- NOTE: User shall enable PFC on the interfaces by configuring the table "PORT_QOS_MAP" in json file and issue **sonic-cfggen** command. **E.g., sonic-cfggen -w -j pfc.json**. The example config file as following. Otherwise, an error message **"Cannot find interface Ethernetxxx"** will be returned when using the config command above.
+  - pfc.json:
+    ```
+    PORT_QOS_MAP: {
+        "Ethernet0": {
+            "pfc_enable": "3,4"
+        }
+    }
+    ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#qos)
 
