@@ -5963,12 +5963,12 @@ When configuring the Static NAPT entry, user has to specify the following fields
 
 - Usage:
   ```
-  config nat add static {{basic (global-ip) (local-ip)} | {{tcp | udp} (global-ip) (global-port) (local-ip) (local-port)}} [-nat_type {snat | dnat}] [-twice_nat_id (value)]
+  config nat add static (basic <global-ip> <local-ip> | (tcp | udp) <global-ip> <global-port> <local-ip> <local-port>) [-nat_type (snat | dnat)] [-twice_nat_id <value>]
   ```
 
 To delete a static NAT or NAPT entry, use the command below. Giving the all argument deletes all the configured static NAT and NAPT entries.
 ```
-config nat remove static {{basic (global-ip) (local-ip)} | {{tcp | udp} (global-ip) (global-port) (local-ip) (local-port)} | all}
+config nat remove static (basic <global-ip> <local-ip> | (tcp | udp) <global-ip> <global-port> <local-ip> <local-port> | all)
 ```
 - Example:
   ```
@@ -6008,11 +6008,11 @@ Pool can be configured in one of the following combinations.
 
 - Usage:
   ```
-  config nat add pool (pool-name) (global-ip-range) (global-port-range)
+  config nat add pool <pool-name> <global-ip-range> <global-port-range>
   ```
 To delete a NAT pool, use the command. Pool cannot be removed if it is referenced by a NAT binding. Giving the pools argument removes all the configured pools.
 ```
-config nat remove {pool (pool-name) | pools}
+config nat remove (pool <pool-name> | pools)
 ```
 - Example:
   ```
@@ -6037,11 +6037,11 @@ This command is used to create a NAT binding between a pool and an ACL. The foll
 
 - Usage:
   ```
-  config nat add binding (binding-name) [(pool-name)] [(acl-name)] [-nat_type {snat | dnat}] [-twice_nat_id (value)]
+  config nat add binding <binding-name> [<pool-name>] [<acl-name>] [-nat_type (snat | dnat)] [-twice_nat_id <value>]
   ```
 To delete a NAT binding, use the command below. Giving the bindings argument removes all the configured bindings.
 ```
-config nat remove {binding (binding-name) | bindings}
+config nat remove (binding <binding-name> | bindings)
 ```
 - Example:
   ```
@@ -6062,11 +6062,11 @@ This command is used to configure NAT zone on an L3 interface. Default value of 
 
 - Usage:
   ```
-  config nat add interface (interface-name) -nat_zone (value)
+  config nat add interface <interface-name> -nat_zone <value>
   ```
 To reset the NAT zone on an interface, use the command below. Giving the interfaces argument resets the NAT zone on all the L3 interfaces to 0.
 ```
-config nat remove {interface (interface-name) | interfaces}
+config nat remove (interface <interface-name> | interfaces)
 ```
 - Example:
   ```
@@ -6091,11 +6091,11 @@ Range for UDP NAT/NAPT entry timeout is 120 sec to 600 sec, default value is 300
 
 - Usage:
   ```
-  config nat set {tcp-timeout (value) | timeout (value) | udp-timeout (value)}
+  config nat set (tcp-timeout <value> | timeout <value> | udp-timeout <value>)
   ```
 To reset the timeout values to the default values, use the command
 ```
-config nat reset {tcp-timeout | timeout | udp-timeout}
+config nat reset (tcp-timeout | timeout | udp-timeout)
 ```
 - Example:
   ```
@@ -6115,7 +6115,7 @@ This command is used to enable or disable the NAT feature.
 
 - Usage:
   ```
-  config nat feature {enable | disable}
+  config nat feature (enable | disable)
   ```
 
 - Example:
