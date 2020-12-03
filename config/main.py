@@ -3173,15 +3173,24 @@ def bind(ctx, interface_name, vrf_name):
     if table_name == "VLAN_INTERFACE":
         if is_sag_configured_on_interface(config_db, interface_name) is True:
             sag_ipv4_config_entry = config_db.get_entry('SAG',(interface_name,'IPv4'))
-            if sag_ipv4_config_entry !=None:
-                config_db.mod_entry('SAG_GLOBAL', 'IP', {'IPv4': 'disable'})
-                time.sleep(0.01)
-                config_db.mod_entry('SAG_GLOBAL', 'IP', {'IPv4': 'enable'})
             sag_ipv6_config_entry = config_db.get_entry('SAG',(interface_name,'IPv6'))
-            if sag_ipv6_config_entry !=None:
-                config_db.mod_entry('SAG_GLOBAL', 'IP', {'IPv6': 'disable'})
-                time.sleep(0.01)
-                config_db.mod_entry('SAG_GLOBAL', 'IP', {'IPv6': 'enable'})
+            if sag_ipv4_config_entry != None:
+                ip_address = sag_ipv4_config_entry.get('gwip')
+                for ip_addr in ip_address:
+                    delete_sag_interface(ctx, config_db,'IPv4', interface_name, ip_addr)
+            if sag_ipv6_config_entry != None:
+                ip_address = sag_ipv6_config_entry.get('gwip')
+                for ip_addr in ip_address:
+                    delete_sag_interface(ctx, config_db,'IPv6', interface_name, ip_addr)
+            time.sleep(0.01)
+            if sag_ipv4_config_entry != None:
+                ip_address = sag_ipv4_config_entry.get('gwip')
+                for ip_addr in ip_address:
+                    set_sag_interface(ctx, config_db,'IPv4', interface_name, ip_addr)
+            if sag_ipv6_config_entry != None:
+                ip_address = sag_ipv6_config_entry.get('gwip')
+                for ip_addr in ip_address:
+                    set_sag_interface(ctx, config_db,'IPv6', interface_name, ip_addr)
 
     # Enable IPv6 on the interface to sync IPv6 link-local address
     cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=0 -q'.format(interface_name)
