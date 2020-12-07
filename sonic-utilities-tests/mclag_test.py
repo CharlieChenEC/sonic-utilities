@@ -358,10 +358,10 @@ class TestMclag(object):
         app_db.set_entry(self.app_db_tables['lag'], member, {'oper_status': local_status})
 
         # prepare entry on state db
-        session_status = 'up'
+        session_status = 'down'
         role = 'active'
         system_mac = 'b8:6a:97:73:6c:96'
-        state_db.set_entry(self.state_db_tables['mclag_domain'], domain_id, {'oper_status': session_status, 'role': role, 'system_mac': system_mac})
+        state_db.set_entry(self.state_db_tables['mclag_domain'], domain_id, {'role': role, 'system_mac': system_mac})
         remote_status = 'up'
         state_db.set_entry(self.state_db_tables['mclag_remote_intf'], (domain_id, member), {'oper_status': remote_status})
 

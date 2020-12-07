@@ -3963,7 +3963,7 @@ def brief(ctx):
         role = ''
         system_mac = ''
         if state_entry:
-            session_status = state_entry.get('oper_status').capitalize() or ''
+            session_status = state_entry.get('oper_status').capitalize() if state_entry.get('oper_status') else 'Down'
             role = state_entry.get('role').capitalize() or ''
             system_mac = state_entry.get('system_mac') or ''
 
