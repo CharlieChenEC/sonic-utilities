@@ -62,7 +62,7 @@ class portconfig(object):
             cur_brkout_mode = cur_brkout_dict[parent_port]["brkout_mode"]
             tmp_mode = re.split("[/[]", cur_brkout_mode)
             (port_num, tmp_speed) = tmp_mode[0].split("x", 1)
-            speed_list.append(tmp_speed)
+            speed_list.append(tmp_speed.split("(")[0])
 
             if len(tmp_mode) > 1:
                 tmp_list = re.split("[,\]]", tmp_mode[1])
