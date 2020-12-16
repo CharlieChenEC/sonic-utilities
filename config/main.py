@@ -205,7 +205,7 @@ def _validate_interface_mode(ctx, breakout_cfg_file, interface_name, target_brko
         return False
 
     # Check whether target breakout mode is available for the user-selected interface or not
-    if target_brkout_mode not in breakout_file_input[interface_name]["breakout_modes"].strip(',').split():
+    if target_brkout_mode not in breakout_file_input[interface_name]["breakout_modes"].replace(" ","").split(','):
         click.secho('[ERROR] Target mode {} is not available for the port {}'. format(target_brkout_mode, interface_name), fg='red')
         return False
 
