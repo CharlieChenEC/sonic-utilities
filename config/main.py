@@ -1112,6 +1112,7 @@ def config():
 
 config.add_command(aaa.aaa)
 config.add_command(aaa.tacacs)
+config.add_command(aaa.ldap)
 # === Add NAT Configuration ==========
 config.add_command(nat.nat)
 

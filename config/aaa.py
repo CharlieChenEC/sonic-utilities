@@ -77,9 +77,9 @@ authentication.add_command(fallback)
 
 
 @click.command()
-@click.argument('auth_protocol', nargs=-1, type=click.Choice(["tacacs+", "local", "default"]))
+@click.argument('auth_protocol', nargs=-1, type=click.Choice(["tacacs+", "ldap", "local", "default"]))
 def login(auth_protocol):
-    """Switch login authentication [ {tacacs+, local} | default ]"""
+    """Switch login authentication [ {tacacs+, ldap, local} | default ]"""
     if len(auth_protocol) is 0:
         print 'Not support empty argument'
         return
@@ -88,8 +88,9 @@ def login(auth_protocol):
         del_table_key('AAA', 'authentication', 'login')
     else:
         val = auth_protocol[0]
-        if len(auth_protocol) == 2:
-            val += ',' + auth_protocol[1]
+        # if len(auth_protocol) == 2:
+            # val += ',' + auth_protocol[1]
+        val = ','.join(auth_protocol)
         add_table_kv('AAA', 'authentication', 'login', val)
 authentication.add_command(login)
 
@@ -205,6 +206,72 @@ def delete(address):
     config_db.set_entry('TACPLUS_SERVER', address, None)
 tacacs.add_command(delete)
 
+
+@click.group()
+def ldap():
+    """LDAP server configuration"""
+    pass
+
+
+# cmd: ldap add <ip_address> --port PORT --pri PRIORITY
+@ldap.command(name='add')
+@click.argument('address', metavar='<ip_address>')
+@click.option('-o', '--port', help='TCP port range is 1 to 65535, default 389', type=click.IntRange(1, 65535), default=389)
+@click.option('-p', '--pri', help="Priority, default 1", type=click.IntRange(1, 64), default=1)
+def add(address, port, pri):
+    """Specify a LDAP server"""
+    if not is_ipaddress(address):
+        click.echo('Invalid ip address')
+        return
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    old_data = config_db.get_entry('LDAP_SERVER', address)
+    if old_data != {}:
+        click.echo('server %s already exists' % address)
+    else:
+        data = {
+            'tcp_port': str(port),
+            'priority': pri
+        }
+        config_db.set_entry('LDAP_SERVER', address, data)
+
+# cmd: ldap delete <ip_address>
+@ldap.command(name='delete')
+@click.argument('address', metavar='<ip_address>')
+def delete(address):
+    """Delete a LDAP server"""
+    if not is_ipaddress(address):
+        click.echo('Invalid ip address')
+        return
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    config_db.set_entry('LDAP_SERVER', address, None)
+
+@ldap.command()
+@click.argument('second', metavar='<time_second>', type=click.IntRange(30, 300), required=True)
+def timeout(second):
+    """Specify LDAP server global timeout <30 - 300>"""
+    add_table_kv('LDAP', 'global', 'timeout', second)
+
+@ldap.command(name='base-dn')
+@click.argument('dn', metavar='<base_dn_string>', required=True)
+def base_dn(dn):
+    """Specify LDAP server global base-dn <STRING>"""
+    add_table_kv('LDAP', 'global', 'base_dn', dn)
+
+@ldap.command(name='bind-dn')
+@click.argument('dn', metavar='<bind_dn_string>', required=True)
+def bind_dn(dn):
+    """Specify LDAP server global bind-dn <STRING>"""
+    add_table_kv('LDAP', 'global', 'bind_dn', dn)
+
+@ldap.command(name='bind-dn-password')
+@click.argument('bind_dn_password', metavar='<password_string>', required=True)
+def bind_dn_password(bind_dn_password):
+    """Specify LDAP server global bind-dn-password <STRING>"""
+    add_table_kv('LDAP', 'global', 'bind_dn_password', bind_dn_password)
 
 if __name__ == "__main__":
     aaa()

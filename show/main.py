@@ -2659,6 +2659,38 @@ def tacacs():
                 output += ('               %s %s\n' % (key, str(entry[key])))
     click.echo(output)
 
+@cli.command()
+def ldap():
+    """Show LDAP configuration"""
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    output = ''
+    data = config_db.get_table('LDAP')
+
+    ldap = {
+        'global': {
+            'timeout': '30 (default)',
+            'base_dn': '<EMPTY_STRING> (default)',
+            'bind_dn': '<EMPTY_STRING> (default)',
+			'bind_dn_password': '<EMPTY_STRING> (default)'
+        }
+    }
+    if 'global' in data:
+        ldap['global'].update(data['global'])
+
+    output += ('Timeout        : {} seconds\n'.format(ldap['global']['timeout']))
+    output += ('Base DN        : {}\n'.format(ldap['global']['base_dn']))
+    output += ('Bind DN        : {}\n'.format(ldap['global']['bind_dn']))
+
+    data = config_db.get_table('LDAP_SERVER')
+    if data != {}:
+        for ip, data in data.items():
+            output += '\n'
+            output += ('Server address : {}\n'.format(ip))
+            output += ('Port           : {}\n'.format(data['tcp_port']))
+            output += ('Priority       : {}\n'.format(data['priority']))
+    click.echo(output)
+
 #
 # 'mirror_session' command  ("show mirror_session ...")
 #
