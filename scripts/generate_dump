@@ -437,6 +437,7 @@ main() {
     fi
 
     if [ "$asic" = "broadcom" ]; then
+        local driver_id=$(bcmcmd "soc" | grep Driver= | cut -d '=' -f4)
         save_cmd "bcmcmd -t5 version" "broadcom.version"
         save_cmd "bcmcmd -t5 soc" "broadcom.soc"
         save_cmd "bcmcmd -t5 ps" "broadcom.ps"
@@ -446,8 +447,11 @@ main() {
         save_cmd "cat /proc/bcm/knet/link" "broadcom.knet.link"
         save_cmd "cat /proc/bcm/knet/rate" "broadcom.knet.rate"
         save_cmd "cat /proc/bcm/knet/stats" "broadcom.knet.stats"
-        save_cmd "bcmcmd \"l3 nat_ingress show\"" "broadcom.nat.ingress"
-        save_cmd "bcmcmd \"l3 nat_egress show\"" "broadcom.nat.egress"
+        # BCM56980(AS9716/AS8000) and BCM56370(AS4630) do not support NAT feature
+        if [[ "${driver_id:0:8}" != "BCM56980" && "${driver_id:0:8}" != "BCM56370" ]]; then
+            save_cmd "bcmcmd \"l3 nat_ingress show\"" "broadcom.nat.ingress"
+            save_cmd "bcmcmd \"l3 nat_egress show\"" "broadcom.nat.egress"
+        fi
     fi
 
     if $GREP -qi "aboot_platform=.*arista" /host/machine.conf; then
