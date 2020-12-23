@@ -1626,7 +1626,7 @@ def mirror_session():
 @click.argument('dscp', metavar='<dscp>', required=True)
 @click.argument('ttl', metavar='<ttl>', required=True)
 @click.argument('gre_type', metavar='[gre_type]', required=False)
-@click.argument('queue', metavar='[queue]', required=False)
+@click.argument('queue', metavar='[queue]', required=False, type=click.IntRange(0, 0))
 @click.option('--policer')
 def add(session_name, src_ip, dst_ip, dscp, ttl, gre_type, queue, policer):
     """ Add ERSPAN mirror session.(Legacy support) """
@@ -1650,7 +1650,7 @@ def erspan(ctx):
 @click.argument('dscp', metavar='<dscp>', required=True)
 @click.argument('ttl', metavar='<ttl>', required=True)
 @click.argument('gre_type', metavar='[gre_type]', required=False)
-@click.argument('queue', metavar='[queue]', required=False)
+@click.argument('queue', metavar='[queue]', required=False, type=click.IntRange(0, 0))
 @click.argument('src_port', metavar='[src_port]', required=False)
 @click.argument('direction', metavar='[direction]', required=False)
 @click.option('--policer')
@@ -1723,7 +1723,7 @@ def span(ctx):
 @click.argument('dst_port', metavar='<dst_port>', required=True)
 @click.argument('src_port', metavar='[src_port]', required=False)
 @click.argument('direction', metavar='[direction]', required=False)
-@click.argument('queue', metavar='[queue]', required=False)
+@click.argument('queue', metavar='[queue]', required=False, type=click.IntRange(0, 0))
 @click.option('--policer')
 def add(session_name, dst_port, src_port, direction, queue, policer):
     """ Add SPAN mirror session """
