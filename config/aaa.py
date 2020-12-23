@@ -16,6 +16,45 @@ def is_ipaddress(val):
     return True
 
 
+def is_dn(dn):
+    dn = dn.strip()
+    if dn == '':
+        return False
+
+    rdns = dn.split(',')
+    for rdn in rdns:
+
+        type_values = rdn.split('+')
+        for tv in type_values:
+            if '=' not in tv:
+                return False
+
+            _type, value = tv.split('=')
+            if _type.isalnum() == False:
+                return False
+
+    return True
+
+
+def validate_dn(ctx, param, value):
+    if len(value) > 64:
+        raise click.BadParameter('Maximum length of DN is 64')
+
+    valid = is_dn(value)
+
+    if not valid:
+        raise click.BadParameter('{} is not a DN'.format(value))
+
+    return value
+
+
+def validate_bind_dn_password(ctx, param, value):
+    if len(value) > 64:
+        raise click.BadParameter('Maximum length of password is 64')
+
+    return value
+
+
 def add_table_kv(table, entry, key, val):
     config_db = ConfigDBConnector()
     config_db.connect()
@@ -256,19 +295,19 @@ def timeout(second):
     add_table_kv('LDAP', 'global', 'timeout', second)
 
 @ldap.command(name='base-dn')
-@click.argument('dn', metavar='<base_dn_string>', required=True)
+@click.argument('dn', metavar='<base_dn_string>', required=True, callback=validate_dn)
 def base_dn(dn):
     """Specify LDAP server global base-dn <STRING>"""
     add_table_kv('LDAP', 'global', 'base_dn', dn)
 
 @ldap.command(name='bind-dn')
-@click.argument('dn', metavar='<bind_dn_string>', required=True)
+@click.argument('dn', metavar='<bind_dn_string>', required=True, callback=validate_dn)
 def bind_dn(dn):
     """Specify LDAP server global bind-dn <STRING>"""
     add_table_kv('LDAP', 'global', 'bind_dn', dn)
 
 @ldap.command(name='bind-dn-password')
-@click.argument('bind_dn_password', metavar='<password_string>', required=True)
+@click.argument('bind_dn_password', metavar='<password_string>', required=True, callback=validate_bind_dn_password)
 def bind_dn_password(bind_dn_password):
     """Specify LDAP server global bind-dn-password <STRING>"""
     add_table_kv('LDAP', 'global', 'bind_dn_password', bind_dn_password)
