@@ -74,6 +74,7 @@ class AclLoader(object):
     ACL_TABLE = "ACL_TABLE"
     ACL_RULE = "ACL_RULE"
     ACL_TABLE_TYPE_MIRROR = "MIRROR"
+    ACL_TABLE_TYPE_MIRROR_DSCP = "MIRROR_DSCP"
     ACL_TABLE_TYPE_CTRLPLANE = "CTRLPLANE"
     CFG_MIRROR_SESSION_TABLE = "MIRROR_SESSION"
     STATE_MIRROR_SESSION_TABLE = "MIRROR_SESSION_TABLE"
@@ -284,6 +285,14 @@ class AclLoader(object):
         """
         return self.tables_db_info[tname]['type'].upper().startswith(self.ACL_TABLE_TYPE_MIRROR)
 
+    def is_table_mirror_dscp(self, tname):
+        """
+        Check if ACL table type is ACL_TABLE_TYPE_MIRROR_DSCP
+        :param tname: ACL table name
+        :return: True if table type is MIRROR_DSCP else False
+        """
+        return self.tables_db_info[tname]['type'].upper() == self.ACL_TABLE_TYPE_MIRROR_DSCP
+
     def is_table_control_plane(self, tname):
         """
         Check if ACL table type is ACL_TABLE_TYPE_CTRLPLANE
@@ -315,6 +324,11 @@ class AclLoader(object):
 
     def convert_action(self, table_name, rule_idx, rule):
         rule_props = {}
+
+        if self.is_table_mirror(table_name):
+            if rule.actions.config.forwarding_action != "ACCEPT":
+                raise AclLoaderException("Not support rule action {} in table {}, rule {}".format(
+                    rule.actions.config.forwarding_action, table_name, rule_idx))
 
         if rule.actions.config.forwarding_action == "ACCEPT":
             if self.is_table_control_plane(table_name):
@@ -443,6 +457,10 @@ class AclLoader(object):
             if rule.ip.config.dscp:
                 rule_props["DSCP"] = rule.ip.config.dscp
 
+        if self.is_table_mirror_dscp(table_name):
+            if (len(rule_props) > 1) or (len(rule_props) == 1 and 'DSCP' not in rule_props):
+                raise AclLoaderException("Only support DSCP filed for MIRROR_DSCP table {}, rule {}!".format(table_name, rule_idx))
+
         return rule_props
 
     def convert_port(self, port):
@@ -492,6 +510,10 @@ class AclLoader(object):
 
         if tcp_flags:
             rule_props["TCP_FLAGS"] = '0x{:02x}/0x{:02x}'.format(tcp_flags, tcp_flags)
+
+        if self.is_table_mirror_dscp(table_name):
+            if len(rule_props) != 0:
+                raise AclLoaderException("Not support transport filed for MIRROR_DSCP table {}, rule {}!".format(table_name, rule_idx))
 
         return rule_props
 
@@ -549,8 +571,13 @@ class AclLoader(object):
             table_name = acl_set_name.replace(" ", "_").replace("-", "_").upper().encode('ascii')
             acl_set = self.yang_acl.acl.acl_sets.acl_set[acl_set_name]
 
-            if not self.is_table_valid(table_name):
+            acl_table = self.is_table_valid(table_name)
+            if not acl_table:
                 warning("%s table does not exist" % (table_name))
+                continue
+
+            if self.is_table_mirror(table_name) and acl_table.get("stage", Stage.INGRESS) == Stage.EGRESS:
+                warning("Not support mirror on egress table {}".format(table_name))
                 continue
 
             if self.current_table is not None and self.current_table != table_name:
