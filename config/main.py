@@ -413,6 +413,24 @@ def vlan_id_is_valid(vid):
 
     return True
 
+def check_if_vlanid_exist(config_db, vlan):
+    """Check if vlan id exits in the config db or ot"""
+
+    if len(config_db.get_entry('VLAN', vlan)) != 0:
+        return True
+
+    return False
+
+def is_port_vlan_member(config_db, port, vlan):
+    """Check if port is a member of vlan"""
+
+    vlan_ports_data = config_db.get_table('VLAN_MEMBER')
+    for key in vlan_ports_data:
+        if key[0] == vlan and key[1] == port:
+            return True
+
+    return False
+
 def vni_id_is_valid(vni):
     """Check if the vni id is in acceptable range (between 1 and 2^24)
     """
@@ -2057,30 +2075,24 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
     """Add VLAN member"""
     log_info("'vlan member add {} {}' executing...".format(vid, interface_name))
     db = ctx.obj['db']
+
+    if not vlan_id_is_valid(vid):
+        ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
+
     vlan_name = 'Vlan{}'.format(vid)
-    vlan = db.get_entry('VLAN', vlan_name)
+    if check_if_vlanid_exist(db, vlan_name) == False:
+        ctx.fail("{} does not exist".format(vlan_name))
 
     if get_interface_naming_mode() == "alias":
         interface_name = interface_alias_to_name(interface_name)
         if interface_name is None:
-            ctx.fail("'interface_name' is None!")
+            ctx.fail("cannot find interface name for alias {}".format(alias))
 
-    if len(vlan) == 0:
-        ctx.fail("{} doesn't exist".format(vlan_name))
     if interface_is_mirror_dst_port(db, interface_name):
         ctx.fail("{} is configured as mirror destination port".format(interface_name))
 
-    members = vlan.get('members', [])
-    if interface_name in members:
-        if get_interface_naming_mode() == "alias":
-            interface_name = interface_name_to_alias(interface_name)
-            if interface_name is None:
-                ctx.fail("'interface_name' is None!")
-            ctx.fail("{} is already a member of {}".format(interface_name,
-                                                        vlan_name))
-        else:
-            ctx.fail("{} is already a member of {}".format(interface_name,
-                                                        vlan_name))
+    if is_port_vlan_member(db, interface_name, vlan_name):
+        ctx.fail("{} is already a member of {}".format(interface_name, vlan_name))
 
     if is_valid_port(db, interface_name):
         is_port = True
@@ -2093,11 +2105,7 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
        (not is_port and is_pc_router_interface(db, interface_name)):
         ctx.fail("{} is a L3 interface!".format(interface_name))
 
-    members.append(interface_name)
-    vlan['members'] = members
-    db.set_entry('VLAN', vlan_name, vlan)
     db.set_entry('VLAN_MEMBER', (vlan_name, interface_name), {'tagging_mode': "untagged" if untagged else "tagged" })
-
 
 @vlan_member.command('del')
 @click.argument('vid', metavar='<vid>', required=True, type=int)
@@ -2107,31 +2115,22 @@ def del_vlan_member(ctx, vid, interface_name):
     """Delete VLAN member"""
     log_info("'vlan member del {} {}' executing...".format(vid, interface_name))
     db = ctx.obj['db']
+
+    if not vlan_id_is_valid(vid):
+        ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
+
     vlan_name = 'Vlan{}'.format(vid)
-    vlan = db.get_entry('VLAN', vlan_name)
+    if check_if_vlanid_exist(db, vlan_name) == False:
+        ctx.fail("{} does not exist".format(vlan_name))
 
     if get_interface_naming_mode() == "alias":
         interface_name = interface_alias_to_name(interface_name)
         if interface_name is None:
-            ctx.fail("'interface_name' is None!")
+            ctx.fail("cannot find interface name for alias {}".format(alias))
 
-    if len(vlan) == 0:
-        ctx.fail("{} doesn't exist".format(vlan_name))
-    members = vlan.get('members', [])
-    if interface_name not in members:
-        if get_interface_naming_mode() == "alias":
-            interface_name = interface_name_to_alias(interface_name)
-            if interface_name is None:
-                ctx.fail("'interface_name' is None!")
-            ctx.fail("{} is not a member of {}".format(interface_name, vlan_name))
-        else:
-            ctx.fail("{} is not a member of {}".format(interface_name, vlan_name))
-    members.remove(interface_name)
-    if len(members) == 0:
-        del vlan['members']
-    else:
-        vlan['members'] = members
-    db.set_entry('VLAN', vlan_name, vlan)
+    if not is_port_vlan_member(db, interface_name, vlan_name):
+        ctx.fail("{} is not a member of {}".format(interface_name, vlan_name))
+
     db.set_entry('VLAN_MEMBER', (vlan_name, interface_name), None)
 
 #
