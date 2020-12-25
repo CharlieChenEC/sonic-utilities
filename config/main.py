@@ -1540,6 +1540,9 @@ def portchannel_member(ctx):
 def add_portchannel_member(ctx, portchannel_name, port_name):
     """Add member to port channel"""
     db = ctx.obj['db']
+    vlan_member_table = db.get_table('VLAN_MEMBER')
+    if interface_is_in_vlan(vlan_member_table, port_name):
+        ctx.fail("{} has vlan config".format(port_name))
     if interface_is_mirror_dst_port(db, port_name):
         ctx.fail("{} is configured as mirror destination port".format(port_name))
     db.set_entry('PORTCHANNEL_MEMBER', (portchannel_name, port_name),
