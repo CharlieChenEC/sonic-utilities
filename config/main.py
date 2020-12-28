@@ -3162,8 +3162,9 @@ def bind(ctx, interface_name, vrf_name):
     config_db.set_entry(table_name, interface_name, None)
 
     # Disable IPv6 on the interface to prevent creating IPv6 link-local address
-    cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=1 -q'.format(interface_name)
-    run_command(cmd, display_cmd=False)
+    if interface_name.startswith("Loopback") is False:
+        cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=1 -q'.format(interface_name)
+        run_command(cmd, display_cmd=False)
 
     # When config_db del entry and then add entry with same key, the DEL will lost.
     state_db = SonicV2Connector(host='127.0.0.1')
@@ -3196,8 +3197,9 @@ def bind(ctx, interface_name, vrf_name):
                     set_sag_interface(ctx, config_db,'IPv6', interface_name, ip_addr)
 
     # Enable IPv6 on the interface to sync IPv6 link-local address
-    cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=0 -q'.format(interface_name)
-    run_command(cmd, display_cmd=False)
+    if interface_name.startswith("Loopback") is False:
+        cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=0 -q'.format(interface_name)
+        run_command(cmd, display_cmd=False)
 #
 # 'unbind' subcommand
 #
