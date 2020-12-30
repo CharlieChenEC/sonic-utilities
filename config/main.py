@@ -3161,6 +3161,9 @@ def bind(ctx, interface_name, vrf_name):
         config_db.set_entry(table_name, interface_del, None)
     config_db.set_entry(table_name, interface_name, None)
 
+    # Wait the change from config_db is applied
+    time.sleep(1)
+
     # Disable IPv6 on the interface to prevent creating IPv6 link-local address
     if interface_name.startswith("Loopback") is False:
         cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=1 -q'.format(interface_name)
@@ -3200,10 +3203,10 @@ def bind(ctx, interface_name, vrf_name):
     if interface_name.startswith("Loopback") is False:
         cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=0 -q'.format(interface_name)
         run_command(cmd, display_cmd=False)
+
 #
 # 'unbind' subcommand
 #
-
 @vrf.command()
 @click.argument('interface_name', metavar='<interface_name>', required=True)
 @click.pass_context
