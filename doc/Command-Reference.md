@@ -6081,36 +6081,26 @@ This command displays all the mirror sessions that are configured.
   ```
   admin@sonic:~$ show mirror_session
   ERSPAN Sessions
-  Name       Status    SRC IP     DST IP    GRE    DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
-  ------     --------  --------   --------  -----  ------  -----  -------  ---------  --------------  ----------  -----------
-  everflow0  active    10.1.0.32  10.0.0.7
+  Name        Status    SRC IP     DST IP    GRE    DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
+  ----------  --------  --------   --------  -----  ------  -----  -------  ---------  --------------  ----------  -----------
+  everflow0   active    10.1.0.32  10.0.0.7
 
   SPAN Sessions
-  Name    Status    DST Port    SRC Port       Direction    Queue    Policer
-  ------  --------  ----------  -------------  -----------  -------  -------
-  port0   active    Ethernet0   PortChannel10  rx
+  Name        Status    DST Port    SRC Port       Direction    Queue    Policer
+  ----------  --------  ----------  -------------  -----------  -------  -------
+  mrr_port0   active    Ethernet0   PortChannel10  rx
   ```
 
 ### Mirroring Config commands
 
-**config mirror_session**
+**config mirror_session add**
 
-This command is used to add or remove mirroring sessions. Mirror session is identified by "session_name". This command supports configuring both SPAN/ERSPAN sessions. In SPAN user can configure mirroring of list of source ports/LAG to destination port in ingress/egress/both directions. In ERSPAN user can configure mirroring of list of source ports/LAG to a destination IP. Both SPAN/ERSPAN support ACL based mirroring and can be used in ACL configurations.
-While adding a new ERSPAN session, users need to configure the following fields that are used while forwarding the mirrored packets.
+This command is used to add mirroring sessions. Mirror session is identified by "session_name". This command supports configuring both SPAN/ERSPAN sessions. In SPAN user can configure mirroring of list of source ports/LAG to destination port in ingress/egress/both directions. In ERSPAN user can configure mirroring of list of source ports/LAG to a destination IP. Both SPAN/ERSPAN support ACL based mirroring and can be used in ACL configurations.
 
-1) source IP address,
-2) destination IP address,
-3) DSCP (QoS) value with which mirrored packets are forwarded
-4) TTL value
-5) optional - GRE type in GRE tunnel packet. The range is  0...0xFFFF, also accept decimal format. The default value is 0x88BE.
-6) optional - Queue in which packets shall be sent out of the device. This parameter accepts 0 only in current implementation.
-7) optional - List of source ports which can have both Ethernet and LAG ports.
-8) optional - Direction - Mirror session direction when configured along with Source port. (Supported rx/tx/both. default direction is both)
-9) optional - Policer which will be used to control the rate at which frames are mirrored.
-
+The command below are to create ERSPAN mirror session:
 - Usage:
   ```
-  config mirror_session add erspan <session-name> <src_ip> <dst_ip> <dscp> <ttl> [gre_type] [queue] [src_port] [direction] [--policer <policer_name>]
+  config mirror_session erspan add <session-name> <src_ip> <dst_ip> <dscp> <ttl> [gre_type] [queue] [src_port] [direction] [--policer <policer_name>]
   ```
 
   The following command is also supported to be backward compatible.
@@ -6118,8 +6108,21 @@ While adding a new ERSPAN session, users need to configure the following fields 
   ```
   config mirror_session add <session_name> <src_ip> <dst_ip> <dscp> <ttl> [gre_type] [queue]
   ```
+- Parameters:
+  1) session name
+  2) source IP address
+  3) destination IP address
+  4) DSCP (QoS) value with which mirrored packets are forwarded
+  5) TTL value
+  6) optional - GRE type in GRE tunnel packet. The range is  0...0xFFFF, also accept decimal format. The default value is 0x88BE.
+  7) optional - Queue in which packets shall be sent out of the device. This parameter accepts 0 only in current implementation.
+  8) optional - List of source ports which can have both Ethernet and LAG ports.
+  9) optional - Direction - Mirror session direction when configured along with Source port. (Supported rx/tx/both. default direction is both)
+  10) optional - Policer which will be used to control the rate at which frames are mirrored.
 
 - Example:
+
+  The example below show to create a ERSPAN session with name mrr_legacy, source address 1.2.3.4, destination address 20.21.22.23, DSCP 8, TTL 100 and GRE-type 0x6558.
   ```
   admin@sonic:~# config mirror_session add mrr_legacy 1.2.3.4 20.21.22.23 8 100 0x6558 0
   admin@sonic:~# show mirror_session
@@ -6132,7 +6135,23 @@ While adding a new ERSPAN session, users need to configure the following fields 
   Name    Status    DST Port    SRC Port    Direction    Queue    Policer
   ------  --------  ----------  ----------  -----------  -------  ---------
   admin@sonic:~#
+  ```
+  The example below show to create a ERSPAN session with name mrr_abcd, source address 1.2.3.4, destination address 20.21.22.23, DSCP 8, TTL 100 and GRE-type 0x6558.
+  ```
+  admin@sonic:~# config mirror_session erspan add mrr_abcd 1.2.3.4 20.21.22.23 8 100 0x6558 0
+  admin@sonic:~# show mirror_session
+  ERSPAN Sessions
+  Name       Status    SRC IP     DST IP       GRE     DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
+  ---------  --------  --------   -----------  ------  ------  -----  -------  ---------  --------------  ----------  -----------
+  mrr_abcd   inactive  1.2.3.4    20.21.22.23  0x6558       8  100          0
 
+  SPAN Sessions
+  Name    Status    DST Port    SRC Port    Direction    Queue    Policer
+  ------  --------  ----------  ----------  -----------  -------  ---------
+  admin@sonic:~#
+  ```
+  The example below show to create a ERSPAN session with name mrr_port, source address 1.2.3.4, destination address 20.21.22.23, DSCP 8, TTL 100, GRE-type 0x6558 and source port Ethernet0.
+  ```
   admin@sonic:~# config mirror_session erspan add mrr_port 1.2.3.4 20.21.22.23 8 100 0x6558 0 Ethernet0
   admin@sonic:~# show mirror_session
   ERSPAN Sessions
@@ -6145,32 +6164,66 @@ While adding a new ERSPAN session, users need to configure the following fields 
   ------  --------  ----------  ----------  -----------  -------  ---------
   admin@sonic:~#
   ```
-
-While adding a new SPAN session, users need to configure the following fields that are used while forwarding the mirrored packets.
-1) destination port,
-2) optional - List of source ports- List of source ports which can have both Ethernet and LAG ports.
-3) optional - Direction - Mirror session direction when configured along with Source port. (Supported rx/tx/both. default direction is both)
-4) optional - Queue in which packets shall be sent out of the device. This parameter accepts 0 only in current implementation.
-5) optional - Policer which will be used to control the rate at which frames are mirrored.
-
+The command below is to create SPAN mirror session:
 - Usage:
   ```
   config mirror_session span add <session_name> <dst_port> [src_port] [direction] [queue] [--policer <policer_name>]
   ```
+- Parameters:
+  1) session name
+  2) destination port
+  3) optional - List of source ports- List of source ports which can have both Ethernet and LAG ports.
+  4) optional - Direction - Mirror session direction when configured along with Source port. (Supported rx/tx/both. default direction is both)
+  5) optional - Queue in which packets shall be sent out of the device. This parameter accepts 0 only in current implementation.
+  6) optional - Policer which will be used to control the rate at which frames are mirrored.
 
 - Example:
+  The example below show to create a SPAN session with name mrr_port0, destination port Ethernet0 and source ports Ethernet4,PortChannel10,Ethernet8.
   ```
-  admin@sonic:~# config mirror_session span add port0 Ethernet0 Ethernet4,PortChannel10,Ethernet8
+  admin@sonic:~# config mirror_session span add mrr_port0 Ethernet0 Ethernet4,PortChannel10,Ethernet8
   admin@sonic:~# show mirror_session
   ERSPAN Sessions
   Name    Status    SRC IP    DST IP    GRE    DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
   ------  --------  --------  --------  -----  ------  -----  -------  ---------  --------------  ----------  -----------
 
   SPAN Sessions
-  Name    Status    DST Port    SRC Port                           Direction    Queue    Policer
-  ------  --------  ----------  ---------------------------------  -----------  -------  ---------
-  port0   active    Ethernet0   Ethernet4,PortChannel10,Ethernet8  both
+  Name        Status    DST Port    SRC Port                           Direction    Queue    Policer
+  ----------  --------  ----------  ---------------------------------  -----------  -------  ---------
+  mrr_port0   active    Ethernet0   Ethernet4,PortChannel10,Ethernet8  both
   admin@sonic:~#
+  ```
+**config mirror_session remove**
+
+This command is used to remove mirroring sessions.
+- Usage:
+  ```
+  config mirror_session remove <session-name>
+  ```
+- Parameters:
+  1) session name
+
+- Example:
+
+  The example below show to remove a mirror session with session name mrr_port0.
+  ```
+  admin@sonic:~# show mirror_session
+  ERSPAN Sessions
+  Name    Status    SRC IP    DST IP    GRE    DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
+  ------  --------  --------  --------  -----  ------  -----  -------  ---------  --------------  ----------  -----------
+
+  SPAN Sessions
+  Name        Status    DST Port    SRC Port                           Direction    Queue    Policer
+  ----------  --------  ----------  ---------------------------------  -----------  -------  ---------
+  mrr_port0   active    Ethernet0   Ethernet4,PortChannel10,Ethernet8  both
+  admin@sonic:~# config mirror_session remove mrr_port0
+  admin@sonic:~# show mirror_session
+  ERSPAN Sessions
+  Name    Status    SRC IP    DST IP    GRE    DSCP    TTL    Queue    Policer    Monitor Port    SRC Port    Direction
+  ------  --------  --------  --------  -----  ------  -----  -------  ---------  --------------  ----------  -----------
+
+  SPAN Sessions
+  Name    Status    DST Port    SRC Port    Direction    Queue    Policer
+  ------  --------  ----------  ----------  -----------  -------  ---------
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#mirroring)
