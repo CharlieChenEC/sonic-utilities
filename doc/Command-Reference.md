@@ -4721,13 +4721,15 @@ The principles are:
 - There is only one primary address for the interface. Other addresses should be specified as secondary ones.
 - The first added address SHOULD be the primary address. The secondary address SHOULD be added after the primary one.
 - The command syntax of addition of primary address is like the original syntax. The syntax for addition for secondary address is
-  *Usage (Add a secondary IPv4 address)*
+
+  *Usage (Add a secondary IPv4 address):*
   ```
   config interface <interface_name> ip add <ip_addr> --secondary
   ```
 - The primary address SHOULD be the last address to be removed from the interface. In order to remove the primary address, it requires to remove all secondary addresses at first.
 - The command syntax of removal of primary address is like the original syntax. The syntax for removal for secondary address is
-  *Usage (Remove a secondary IPv4 address)*
+
+  *Usage (Remove a secondary IPv4 address):*
   ```
   config interface <interface_name> ip remove <ip_addr> --secondary
   ```
