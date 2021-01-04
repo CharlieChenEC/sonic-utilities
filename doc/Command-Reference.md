@@ -4713,6 +4713,25 @@ VLAN interface names take the form of `vlan<vlan_id>`. E.g., VLAN 100 will be na
   admin@sonic:~$ sudo config interface vlan100 ip remove 10.11.12.13/24
   ```
 
+**config interface ip add/remove --secondary**
+Since SONiC 202006 Dec. version, the IPv4 addresses for an interface are classified as the primary address and secondary ones. There is no primary/secondary classification for IPv6 addresses.
+
+The principles are:
+
+- There is only one primary address for the interface. Other addresses should be specified as secondary ones.
+- The first added address SHOULD be the primary address. The secondary address SHOULD be added after the primary one.
+- The command syntax of addition of primary address is like the original syntax. The syntax for addition for secondary address is
+  *Usage (Add a secondary IPv4 address)*
+  ```
+  config interface <interface_name> ip add <ip_addr> --secondary
+  ```
+- The primary address SHOULD be the last address to be removed from the interface. In order to remove the primary address, it requires to remove all secondary addresses at first.
+- The command syntax of removal of primary address is like the original syntax. The syntax for removal for secondary address is
+  *Usage (Remove a secondary IPv4 address)*
+  ```
+  config interface <interface_name> ip remove <ip_addr> --secondary
+  ```
+
 **config interface pfc priority <interface_name> <priority> (on | off)**
 
 This command is used to set PFC on a given priority of a given interface to either "on" or "off". Once it is successfully configured, it will show current losses priorities on the given interface. Otherwise, it will show error information
