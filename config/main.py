@@ -2792,11 +2792,34 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
     if not _validate_interface_mode(ctx, breakout_cfg_file, interface_name, mode, cur_brkout_mode):
         raise click.Abort()
 
-    """ Interface Deletion Logic """
     # Get list of interfaces to be deleted
     del_ports = get_child_ports(interface_name, cur_brkout_mode, breakout_cfg_file)
     del_intf_dict = {intf: del_ports[intf]["speed"] for intf in del_ports}
 
+    # Get list of interfaces to be added
+    add_ports = get_child_ports(interface_name, target_brkout_mode, breakout_cfg_file)
+    add_intf_dict = {intf: add_ports[intf]["speed"] for intf in add_ports}
+
+    # If the interfaces and lanes per port are not changed, then just set speed only.
+    if len(del_intf_dict) == len(add_intf_dict):
+        need_port_breakout = False
+        for intf in del_intf_dict.keys():
+            if del_ports[intf]["lanes"] != add_ports[intf]["lanes"]:
+                need_port_breakout = True
+                break
+
+        if need_port_breakout == False:
+            for intf in del_intf_dict.keys():
+                config_db.mod_entry("PORT", intf, {"speed": add_intf_dict[intf]})
+            # Set Current Breakout mode in config DB
+            config_db.set_entry("BREAKOUT_CFG", interface_name,\
+                {'brkout_mode': target_brkout_mode})
+            click.secho("Breakout process got successfully completed.".\
+                format(interface_name),  fg="cyan", underline=True)
+            click.echo("Please note loaded setting will be lost after system reboot. To preserve setting, run `config save`.")
+            return True
+
+    """ Interface Deletion Logic """
     if del_intf_dict:
         """ shut down all the interface before deletion """
         ret = shutdown_interfaces(ctx, del_intf_dict)
@@ -2809,10 +2832,6 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
         raise click.Abort()
 
     """ Interface Addition Logic """
-    # Get list of interfaces to be added
-    add_ports = get_child_ports(interface_name, target_brkout_mode, breakout_cfg_file)
-    add_intf_dict = {intf: add_ports[intf]["speed"] for intf in add_ports}
-
     if add_intf_dict:
         click.echo("Ports to be added : \n {}".format(json.dumps(add_intf_dict, indent=4)))
     else:
