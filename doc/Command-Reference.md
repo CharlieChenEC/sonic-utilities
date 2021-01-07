@@ -20,6 +20,9 @@
   * [AAA](#aaa)
     * [AAA show commands](#aaa-show-commands)
     * [AAA config commands](#aaa-config-commands)
+  * [LDAP](#ldap)
+    * [LDAP show commands](#ldap-show-commands)
+    * [LDAP config commands](#ldap-config-commands)
   * [TACACS+](#tacacs)
     * [TACACS+ show commands](#tacacs-show-commands)
     * [TACACS+ config commands](#tacacs-config-commands)
@@ -360,6 +363,7 @@ This command displays the full list of show commands available in the software; 
     ip                    Show IP (IPv4) commands
     ipv6                  Show IPv6 commands
     kdump                 Show kdump configuration, status and information
+    ldap                  Show LDAP configuration
     line                  Show all /dev/ttyUSB lines and their info
     lldp                  LLDP (Link Layer Discovery Protocol) information
     logging               Show system log
@@ -952,7 +956,7 @@ Note: This command only works on the platforms which support PIM hotwap, for exa
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#basic-show-commands)
 
-## AAA & TACACS+
+## AAA & LDAP & TACACS+
 This section captures the various show commands & configuration commands that are applicable for the AAA (Authentication, Authorization, and Accounting) module.
 Admins can configure the type of authentication (local or remote tacacs based) required for the users and also the authentication failthrough and fallback options.
 Following show command displays the current running configuration related to the AAA.
@@ -1053,6 +1057,165 @@ The below command is to configure AAA to use remote tacacs+ database for user au
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#aaa--tacacs)
+
+
+### LDAP
+
+#### LDAP show commands
+
+**show ldap**
+
+This command is used to show LDAP related configuration.
+
+- Usage:
+  ```
+  show ldap
+  ```
+
+The below example is to show LDAP configuration.
+
+- Example:
+  ```
+  show ldap
+  Timeout        : 30 seconds
+  Base DN        : dc=test,dc=com
+  Bind DN        : cn=admin,dc=test,dc=com
+
+  Server address : 1.2.3.4
+  Port           : 389
+  ```
+
+#### LDAP config commands
+
+This section explains all CLI based configuration options for the LDAP authentication. The list of commands for LDAP authentication is given below.
+
+Commands:
+
+- config ldap timeout
+- config ldap base-dn
+- config ldap bind-dn
+- config ldap bind-dn-password
+- config ldap add
+- config ldap delete
+
+**config ldap timeout**
+
+This command is used to configure time limit when connecting to LDAP server.
+
+- Usage:
+  ```
+  config ldap timeout <timeout>
+  ```
+
+  - Parameters:
+    - **timeout**: timeout in seconds, the range is 30 to 300 and default value is 30.
+
+The below example is to configure time limit to 180 seconds.
+
+- Example:
+  ```
+  config ldap timeout 180
+  ```
+
+**config ldap base-dn**
+
+This command is used to configure DN of the search base.
+
+- Usage:
+  ```
+  config ldap base-dn <dn>
+  ```
+
+  - Parameters:
+    - **dn**: base DN, the syntax can refer [RFC4514](https://tools.ietf.org/html/rfc4514#section-3), and the maximum length of DN is 64.
+
+The below example is to configure base DN to "dc=test,dc=com".
+
+- Example:
+  ```
+  config ldap base-dn dc=test,dc=com
+  ```
+
+**config ldap bind-dn**
+
+This command is used to configure the administrator bind DN.
+
+- Usage:
+  ```
+  config ldap bind-dn <dn>
+  ```
+
+  - Parameters:
+    - **dn**: bind DN, the syntax can refer [RFC4514](https://tools.ietf.org/html/rfc4514#section-3), and the maximum length of DN is 64.
+
+The below example is to configure bind DN as "cn=admin,dc=test,dc=com".
+
+- Example:
+  ```
+  config ldap bind-dn cn=admin,dc=test,dc=com
+  ```
+
+**config ldap bind-dn-password**
+
+This command is used to configure the password of the administrator bind DN.
+
+- Usage:
+  ```
+  config ldap bind-dn-password <password>
+  ```
+
+  - Parameters:
+    - **password**: password of the administrator bind-dn, maximum length is 64.
+
+The below example is to configure the password of the bind DN.
+
+- Example:
+  ```
+  config ldap bind-dn-password test1234
+  ```
+
+**config ldap add**
+
+This command is used to add a LDAP server configuration.
+
+- Usage:
+  ```
+  config ldap add <ipv4_address> [-o|--port <port>] [-p|--pri <priority>]
+  ```
+
+  - Parameters:
+    - **ipv4_address**: IP address of LDAP server.
+    - **port**: port number of LDAP server, the range is 1 to 65535 and default value is 389.
+    - **pri**: priority of LDAP server, the range is 1 to 64 and default value is 1.
+
+The below example is to configure a LDAP server.
+
+- Example:
+  ```
+  config ldap add 1.2.3.4 -o 389 -p 1
+  ```
+
+**config ldap delete**
+
+This command is used to delete a LDAP server configuration.
+
+- Usage:
+  ```
+  config ldap delete <ipv4_address>
+  ```
+
+  - Parameters:
+    - **ipv4_address**: IP address of LDAP server.
+
+The below example is to delete a LDAP server.
+
+- Example:
+  ```
+  config ldap delete 1.2.3.4
+  ```
+
+Go Back To [Beginning of the document](#) or [Beginning of this section](#ldap)
+
 
 ### TACACS+
 
