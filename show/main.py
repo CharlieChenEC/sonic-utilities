@@ -207,6 +207,25 @@ def readJsonFile(fileName):
         raise click.Abort()
     return result
 
+def run_system_command(command, shell=True, debug=False, remove_tail_newline=False):
+    if debug:
+        click.echo(str(command))
+    try:
+        proc = subprocess.Popen(command, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        _stdout, _stderr = proc.communicate()
+        if remove_tail_newline:
+            stdout = _stdout.rstrip("\n")
+            stderr = _stderr.rstrip("\n")
+        else:
+            stdout = _stdout
+            stderr = _stderr
+        returncode = proc.wait()
+        return returncode, stdout, stderr
+    except Exception as e:
+        click.echo(str(e))
+        raise click.Abort()
+
+
 def run_command(command, display_cmd=False, return_cmd=False):
     if display_cmd:
         click.echo(click.style("Command: ", fg='cyan') + click.style(command, fg='green'))
@@ -2056,6 +2075,87 @@ def version(verbose):
 #
 # 'environment' command ("show environment")
 #
+
+#
+# 'system status' command ("show system status")
+#
+def is_process_up_inside_container(container_name, filtered=[]):
+    def filter_out(x):
+        return x[0] in filtered
+
+    cmd_get_process_status_inside_container = 'docker exec ' + container_name + ' supervisorctl status | awk \'{print $1","$2}\''
+    ret , stdout, _ = run_system_command(cmd_get_process_status_inside_container, remove_tail_newline=True)
+    if ret == 0:
+        procs_status = [line.split(",") for line in stdout.split("\n") if line != '']
+        procs_status = [[ str(x[0]), True if x[1] == 'RUNNING' else False] for x in procs_status]
+        result = filter(filter_out , procs_status)
+    else:
+        #container might not running, can't get supervisorctl status
+        result = [(x, None) for x in filtered]
+    return result
+
+def is_container_up(container_name):
+    cmd_get_container_status = "systemctl is-active {}".format(container_name)
+    returncode, stdout, nothing = run_system_command(cmd_get_container_status, remove_tail_newline=True)
+    if stdout == 'active':
+        return True
+    else:
+        return False
+
+def is_port_initialization_completed():
+    app_db = SonicV2Connector(host="127.0.0.1")
+    app_db.connect(app_db.APPL_DB)
+    pstate  = app_db.get(app_db.APPL_DB, 'PORT_TABLE:PortInitDone', 'lanes')
+
+    if pstate is not None:
+        return True
+    else:
+        return False
+
+@cli.group('system', invoke_without_command=False)
+def system():
+    """ Show system status"""
+    pass
+
+@system.command('status')
+@click.option('--verbose', is_flag=True, help="Enable verbose output")
+def system_status(verbose):
+    from critical_service import inside_process as to_check
+    header = ('Container and Inside Process', 'Status')
+    status_str = {True: 'Up', False: 'Down', None: 'N/A'}
+    all_process_status = True
+    result = []
+    for x in to_check:
+        container = x[0]
+        inside_process = x[1]
+        container_status = is_container_up(container)
+
+        all_process_status &= container_status
+        if container_status:
+            inside_process_status = is_process_up_inside_container(container, filtered=inside_process)
+            for z in inside_process_status:
+                all_process_status &= z[1]
+        else:
+            all_process_status = False
+            inside_process_status = [(y, None) for y in inside_process]
+
+        result.append( (container, status_str[container_status]) )
+        for y in inside_process_status:
+            result.append( ("-  " + y[0], status_str[y[1]]) )
+
+    if all_process_status == False:
+        print "System is not ready - core service is down"
+        print tabulate(result, headers=header, tablefmt="simple", stralign='left', missingval="")
+        sys.exit(-1)
+    elif is_port_initialization_completed() == False:
+        print "System is not ready - Ports are not up"
+        sys.exit(-1)
+    else:
+        print "System is ready"
+
+    if verbose and all_process_status == True:
+        print "---"
+        print tabulate(result, headers=header, tablefmt="simple", stralign='left', missingval="")
 
 @cli.command()
 @click.option('--verbose', is_flag=True, help="Enable verbose output")
