@@ -1934,6 +1934,44 @@ def reload():
         click.secho('Buffer definition template not found at {}'.format(buffer_template_file), fg='yellow')
 
 #
+# 'qos scheduler' group ('config qos scheduler ...')
+#
+@qos.group()
+def scheduler():
+    """QoS-Scheduler-related configuration tasks"""
+    pass
+
+@scheduler.command(name='add')
+@click.argument('profile_name', metavar='<profile_name>', required=True)
+@click.option('--meter_type', help='Meter type', type=click.Choice(['bytes', 'packets']), default='bytes')
+@click.option('--pir', help='Maximum bandwidth rate', type=click.IntRange(1, 50000000000), required=True)
+@click.option('--pbs', help='Maximum bandwidth burst', type=click.IntRange(1, 256000000), required=True)
+def add(profile_name, meter_type, pir, pbs):
+    """Add QoS-Scheduler profile."""
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    data = {
+        'meter_type': meter_type,
+        'pir': pir,
+        'pbs': pbs
+    }
+
+    config_db.set_entry("SCHEDULER", profile_name, data)
+
+@scheduler.command(name='del')
+@click.argument('profile_name', metavar='<profile_name>', required=True)
+def delete(profile_name):
+    """Delete QoS-Scheduler profile."""
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    config_db.set_entry("SCHEDULER", profile_name, None)
+
+
+#
 # 'warm_restart' group ('config warm_restart ...')
 #
 @config.group(cls=AbbreviationGroup, name='warm_restart')
