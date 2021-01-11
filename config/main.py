@@ -2842,7 +2842,8 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
                       remains unchanged to limit the traffic impact """
 
     click.secho("\nAfter running Logic to limit the impact", fg="cyan", underline=True)
-    matched_item = [intf for intf, speed in del_intf_dict.items() if intf in add_intf_dict.keys() and speed == add_intf_dict[intf]]
+    # Compare the speed and lane number of the deleted port and the added port
+    matched_item = [intf for intf, speed in del_intf_dict.items() if intf in add_intf_dict.keys() and speed == add_intf_dict[intf] and del_ports[intf]["lanes"] == add_ports[intf]["lanes"]]
 
     # Remove the interface which remains unchanged from both del_intf_dict and add_intf_dict
     map(del_intf_dict.pop, matched_item)
