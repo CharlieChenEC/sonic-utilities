@@ -7837,6 +7837,64 @@ Some of the example QOS configurations that users can modify are given below.
 
 - NOTE: **Due to the incomplete implementation of "config qos clear" this command is a malfunction**.
 
+**config qos scheduler add**
+
+This command is used for creating QoS scheduler profile.
+
+- Usage:
+  ```
+  config qos scheduler add <profile_name> [--meter_type (bytes | packets)] --pir=<pir> --pbs=<pbs>
+  ```
+
+Parameters
+
+* profile_name: QoS scheduler profile name.
+
+* meter_type: scheduler meter type. One of:
+
+  * "bytes": metering is done based on bytes.
+
+  * "packets": metering is done based on packets.
+
+  Default: "bytes".
+
+* pir: shaper maximum bandwidth rate.
+
+  * When meter type is "bytes":
+
+  Unit: Bps(bytes per second). Minimum: "1000" (AS8000 and AS9716-32D: "4000"). Maximum: "50000000000".
+
+  * When meter type is "packets":
+
+  Unit: pps(packets per second). Minimum: "1". Maximum: "50000000000".
+
+* pbs: shaper maximum bandwidth burst. Unit: bytes if meter type is "bytes", otherwise packets. Minimum: "1". Maximum: "256000000".
+
+The following example shows how to create a QoS scheduler profile named profile-1. meter_type: bytes. pir: 100000. pbs: 8000.
+- Example:
+  ```
+  admin@sonic:~$ sudo config qos scheduler add profile-1 --meter_type=bytes --pbs=100000 --pir=8000
+  ```
+
+**config qos scheduler del**
+
+This command is used for removing QoS scheduler profile.
+
+- Usage:
+  ```
+  config qos scheduler del <profile_name>
+  ```
+
+Parameters
+
+* profile_name: QoS scheduler profile name.
+
+The following example shows how to remove a QoS scheduler profile named profile-1.
+- Example:
+  ```
+  admin@sonic:~$ sudo config qos scheduler del profile-1
+  ```
+
 **config interface pfc asymmetric**
 
 This command is used for setting the asymmetric PFC for an interface to either "on" or "off".
