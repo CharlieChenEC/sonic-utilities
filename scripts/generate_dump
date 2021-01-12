@@ -22,6 +22,7 @@ TOUCH=touch
 V=
 NOOP=false
 DO_COMPRESS=true
+NOLOG=false
 CMD_PREFIX=
 SINCE_DATE="@0" # default is set to January 1, 1970 at 00:00:00 GMT
 REFERENCE_FILE=/tmp/reference
@@ -480,24 +481,27 @@ main() {
         || abort "${ERROR_TAR_FAILED}" "Tar append operation failed. Aborting for safety.") \
         && $RM $V -rf $TARDIR
 
-    disable_logrotate
-    trap enable_logrotate HUP INT QUIT TERM KILL ABRT ALRM
+    # Not to collect log files if nolog option is applied
+    if ! $NOLOG ; then
+        disable_logrotate
+        trap enable_logrotate HUP INT QUIT TERM KILL ABRT ALRM
 
-    # gzip up all log files individually before placing them in the incremental tarball
-    for file in $(find_files "/var/log/"); do
-        # ignore the sparse file lastlog
-        if [ "$file" = "/var/log/lastlog" ]; then
-            continue
-        fi
-        # don't gzip already-gzipped log files :)
-        if [ -z "${file##*.gz}" ]; then
-            save_file $file log false
-        else
-            save_file $file log true
-        fi
-    done
+        # gzip up all log files individually before placing them in the incremental tarball
+        for file in $(find_files "/var/log/"); do
+            # ignore the sparse file lastlog
+            if [ "$file" = "/var/log/lastlog" ]; then
+                continue
+            fi
+            # don't gzip already-gzipped log files :)
+            if [ -z "${file##*.gz}" ]; then
+                save_file $file log false
+            else
+                save_file $file log true
+            fi
+        done
 
-    enable_logrotate
+        enable_logrotate
+    fi
 
     # archive core dump files
     for file in $(find_files "/var/core/"); do
@@ -589,11 +593,13 @@ OPTIONS
         Collect logs since DATE;
         The argument is a mostly free format human readable string such as
         "24 March", "yesterday", etc.
+    -b
+        Collect the dump information without logs.
 
 EOF
 }
 
-while getopts ":xnvhzs:" opt; do
+while getopts ":xnvhzs:b" opt; do
     case $opt in
         x)
             # enable bash debugging
@@ -628,6 +634,9 @@ while getopts ":xnvhzs:" opt; do
             SINCE_DATE="${OPTARG}"
             # validate date expression
             date --date="${SINCE_DATE}" &> /dev/null || abort "${ERROR_INVALID_ARGUMENT}" "Invalid date expression passed: '${SINCE_DATE}'"
+            ;;
+        b)
+            NOLOG=true
             ;;
         /?)
             echo "Invalid option: -$OPTARG" >&2

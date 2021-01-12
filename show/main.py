@@ -2218,13 +2218,16 @@ def users(verbose):
 #
 
 @cli.command()
+@click.option('--nolog', is_flag=True, help="Collect the dump file without logs and core files")
 @click.option('--since', required=False, help="Collect logs and core files since given date")
 @click.option('--verbose', is_flag=True, help="Enable verbose output")
-def techsupport(since, verbose):
+def techsupport(nolog, since, verbose):
     """Gather information for troubleshooting"""
     cmd = "sudo generate_dump -v"
     if since:
         cmd += " -s {}".format(since)
+    if nolog:
+        cmd += " -b"
     run_command(cmd, display_cmd=verbose)
 
 

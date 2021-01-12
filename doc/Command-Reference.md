@@ -10306,6 +10306,9 @@ Resulting archive file is saved as `/var/dump/<DEVICE_HOST_NAME>_YYYYMMDD_HHMMSS
   ```
   admin@sonic:~$ show techsupport [--since=<time_specifier>]
   ```
+  ```
+  admin@sonic:~$ show techsupport [--nolog]
+  ```
 
 If the SONiC system was running for quite some time `show techsupport` will produce a large dump file. To reduce the amount of syslog and core files gathered during system dump use `--since` option:
 
@@ -10315,6 +10318,31 @@ If the SONiC system was running for quite some time `show techsupport` will prod
   ```
   ```
   admin@sonic:~$ show techsupport --since='hour ago' # Will collect syslog and core files for the last one hour
+  ```
+
+Note that the archive file can be reduced to MB level and the time to collect data can also be decreased once the log files have not included.  
+There is an alternative way to collect dump file with the command output and log files separately:
+
+- Examples:
+  ```
+  Step1:
+  # Collect the information without logs(files in /var/log/)
+  admin@sonic:~$ show techsupport --nolog
+
+  Step2:
+  # Use 'scp' to copy the archive file from local device to remote side
+  admin@sonic:~$ sudo scp /var/dump/sonic_dump_YYYYMMDD_HHMMSS.tar.gz remote_username@remote_ip:/tmp/sonic_log/
+
+  Step3:
+  # Use 'scp' to copy the log(ex:syslog) from local device to remote side
+  admin@sonic:~$ sudo scp /var/log/syslog* remote_username@remote_ip:/tmp/sonic_log/
+  sonic@remote_ip's password:
+  syslog                                        100%   20KB  11.4MB/s   00:00
+  syslog.1                                      100% 2056KB  79.5MB/s   00:00
+  syslog.2.gz                                   100%  162KB  58.4MB/s   00:00
+  syslog.3.gz                                   100%  160KB  59.7MB/s   00:00
+  syslog.4.gz                                   100%  170KB  65.7MB/s   00:00
+  ...
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#troubleshooting-commands)
