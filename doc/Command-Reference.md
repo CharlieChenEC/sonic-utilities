@@ -38,6 +38,7 @@
 * [Container Auto-restart](#container-auto-restart)
   * [Container Auto-restart show commands](#container-auto-restart-show-commands)
   * [Container Auto-restart config command](#container-auto-restart-config-command)
+* [CoPP](#copp)
 * [Critical Resource Monitoring](#critical-resource-monitoring)
   * [CRM show commands](#crm-show-commands)
   * [CRM config command](#crm-config-command)
@@ -3033,6 +3034,136 @@ This command is used to remove particular IPv4 or IPv6 BGP neighbor configuratio
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#bgp)
+
+## CoPP
+
+CoPP (Control Plane Policing) allows users to manage and rate limit the control plane packets. CoPP configuration file is composed of one or more trap groups.
+
+For each trap group, it includes one or more predefined trap IDs, that are mapped to known protocols (STP, LACP, EAPOL, etc.), and the meter (if required) to decide how to process the specific packets (forward, trap to CPU, etc.).
+
+For each predefined trap ID, it represents one or more ACL rules to match the expected traffic. For example, one ACL rule is used for trap ID `stp` to match the traffic whose destination MAC address is `01:80:c2:00:00:00`.
+
+The following shows schema of CoPP configuration file:
+
+- Schema:
+  ```
+  {
+    "COPP_TABLE:<trap-group-name>": {
+      "trap_ids": "List of trap IDs",
+      "trap_action": "Packet trap action",
+      "trap_priority": "Priority",
+      "queue": "Queue number",
+      "meter_type": "Meter type",
+      "mode": "Meter mode",
+      "color": "Color mode",
+      "cir": "Number",
+      "cbs": "Number",
+      "pir": "Number",
+      "pbs": "Number",
+      "green_action": "Packet action",
+      "yellow_action": "Packet action",
+      "red_action": "Packet action",
+      "genetlink_name": "Genetlink name",
+      "genetlink_mcgrp_name": "Genetlink multicast group name"
+    },
+    "OP": "SET"
+  }
+  ```
+
+  - Parameters:
+    - `<trap-group-name>`: trap group name.
+    - `trap_ids`: specify trap ID in the trap group.
+    - `trap_action`: specify action for the trap group.
+      - `trap`: trap the packets to CPU for process but not forward the packets.
+      - `copy`: trap the packets to CPU for process and forward the packets.
+      - `drop`: drop the packets.
+    - `trap_priority`: specify priority of the trap group. Higher number means higher priority.
+    - `queue`: specify the CPU queue number the packets will enqueue into for processing when `trap_action` is `trap` or `copy`.
+    - `meter_type`: specify the meter type.
+      - `packets`
+      - `bytes`
+    - `mode`: specify the meter mode.
+      - `sr_tcm`: srTCM (Single Rate Three Color Marker).
+      - `tr_tcm`: trTCM (Triple Rate Three Color Marker).
+      - `storm`: storm control.
+    - `color`: specify the color mode.
+      - `aware`: color-aware mode.
+      - `blind`: color-blind mode.
+    - `cir`: packets or bytes depending on the `meter_type` value.
+    - `cbs`: packets or bytes depending on the `meter_type` value.
+    - `pir`: packets or bytes depending on the `meter_type` value.
+    - `pbs`: packets or bytes depending on the `meter_type` value.
+    - `green_action`: specify action for packets marked as green color by meter.
+    - `yellow_action`: specify action for packets marked as yellow color by meter.
+    - `red_action`: specify action for packets marked as red color by meter.
+    - `genetlink_name`: genetlink name. Value "`psample`" is used for sFlow only.
+    - `genetlink_mcgrp_name`: genetlink multicast group name. Value "`packets`" is used for sFlow only.
+
+The following example shows a trap group named `COPP_TABLE:trap.group.nat` includes two NAT related trap IDs (`src_nat_miss` and `dest_nat_miss`) and the meter:
+
+- Example:
+  ```
+    {
+        "COPP_TABLE:trap.group.nat": {
+            "trap_ids": "src_nat_miss,dest_nat_miss",
+            "trap_action": "trap",
+            "trap_priority": "1",
+            "queue": "1",
+            "meter_type": "packets",
+            "mode": "sr_tcm",
+            "cir": "600",
+            "cbs": "600",
+            "red_action": "drop"
+        },
+        "OP": "SET"
+    },
+  ```
+
+Users can update CoPP configuration by to update the configuration file, which is `/usr/share/sonic/templates/copp.json.j2` located in swss container, and then reload config to apply new configuration.
+
+- Example:
+  ```
+  admin@sonic:~$ docker exec -it swss bash
+  root@sonic:/# vi /usr/share/sonic/templates/copp.json.j2
+  root@sonic:/# exit
+  exit
+  admin@sonic:~$ config reload -y
+  ```
+
+The following items are the supporting trap IDs:
+
+* `stp`
+* `lacp`
+* `eapol`
+* `lldp`
+* `pvrst`
+* `igmp_query`
+* `sample_packet`
+* `udld`
+* `switch_cust_range`
+* `arp_req`
+* `arp_resp`
+* `dhcp`
+* `ospf`
+* `pim`
+* `dhcpv6`
+* `neigh_discovery`
+* `src_nat_miss`
+* `dest_nat_miss`
+* `isis`
+* `arp_suppression`
+* `nd_suppression`
+* `ip2me`
+* `ssh`
+* `snmp`
+* `bgp`
+* `bgpv6`
+* `bfd`
+* `bfdv6`
+* `l3_mtu_error`
+* `ttl_error`
+
+Go Back To [Beginning of the document](#) or [Beginning of this section](#copp)
 
 ## Container Auto-restart
 
