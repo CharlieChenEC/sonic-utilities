@@ -595,6 +595,75 @@ This command displays the cause of the previous reboot
   User issued reboot command [User: admin, Time: Mon Mar 25 01:02:03 UTC 2019]
   ```
 
+**show system status**
+
+This command displays the current system status, showing the system is booting finished or not
+
+- Usage:
+  ```
+  show system status
+  ```
+- Example: System is booting finished
+  ```
+  admin@sonic:~$ show system status
+  System is ready
+  ```
+
+- Example: Port isn' ready yet
+  ```
+  admin@sonic:~$ show system status
+  System is not ready - Ports are not up
+  ```
+- Example: Service isn't ready yet
+
+  Status explanation:
+    - Up: container or process inside the container is active/running
+    - Down: container or process inside the container is not active/running
+    - N/A: container isn't running, thus it's inside process isn't available
+  ```
+  admin@sonic:~$ show system status
+  System is not ready - core service is down
+  Container and Inside Process    Status
+  ------------------------------  --------
+  database                        Up
+  -  redis                        Up
+  swss                            Up
+  -  buffermgrd                   Up
+  -  fdbsyncd                     Up
+  -  intfmgrd                     Up
+  -  intfsyncd                    Up
+  -  nbrmgrd                      Up
+  -  neighsyncd                   Up
+  -  orchagent                    Up
+  -  portmgrd                     Up
+  -  portsyncd                    Up
+  -  vlanmgrd                     Up
+  -  vrfmgrd                      Up
+  -  vxlanmgrd                    Up
+  syncd                           Up
+  -  syncd                        Up
+  bgp                             Up
+  -  bgpcfgd                      Up
+  -  bgpd                         Up
+  -  fpmsyncd                     Up
+  -  staticd                      Up
+  -  zebra                        Up
+  mgmt-framework                  Up
+  pmon                            Up
+  -  psud                         Up
+  -  xcvrd                        Up
+  teamd                           Down
+  -  teammgrd                     N/A
+  -  teamsyncd                    N/A
+  lldp                            Up
+  -  lldp-syncd                   Up
+  -  lldpd                        Up
+  -  lldpmgrd                     Up
+  ```
+
+
+
+
 **show uptime**
 
 This command displays the current system uptime
