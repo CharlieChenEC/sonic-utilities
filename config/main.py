@@ -1545,6 +1545,8 @@ def add_portchannel_member(ctx, portchannel_name, port_name):
         ctx.fail("{} has vlan config".format(port_name))
     if interface_is_mirror_dst_port(db, port_name):
         ctx.fail("{} is configured as mirror destination port".format(port_name))
+    if is_port_router_interface(db, port_name):
+        ctx.fail("{} is a L3 interface!".format(port_name))
     db.set_entry('PORTCHANNEL_MEMBER', (portchannel_name, port_name),
             {'NULL': 'NULL'})
 
