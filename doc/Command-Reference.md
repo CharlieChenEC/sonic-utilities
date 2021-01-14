@@ -111,6 +111,8 @@
 * [SAG](#sag)
   * [SAG Show commands](#sag-show-commands)
   * [SAG Config commands](#sag-config-commands)
+* [Service ACL](#service-acl)
+  * [Service ACL config commands](#service-acl-config-commands)
 * [sFlow](#sflow)
   * [sFlow Show commands](#sflow-show-commands)
   * [sFlow Config commands](#sflow-config-commands)
@@ -8262,6 +8264,195 @@ This command is used to add/del the IPv4/IPv6 address on the SAG interface, and 
   admin@sonic:~# sudo config sag interface ip add Vlan1 192.168.1.1/24
   admin@sonic:~# sudo config sag interface ip del Vlan1 192.168.1.1/24
   ```
+## Service ACL
+
+### Service ACL Config commands
+To configuration service ACL:
+
+**Step1**. Create an ACL table.
+
+a. Create a JSON file, the schema is:
+```
+{
+    "ACL_TABLE": {
+        "<table-name>": {
+            "policy_desc": "Description",
+            "type": "ACL table type",
+            "services": "List of IP protocol"
+        }
+    }
+}
+```
+"**ACL_TABLE**" is an object include all definitions of the ACL table. The property name "<table-name>" is ACL table name. The value is a ACL definition include  
+
+* **policy_desc**: ACL table description.  
+* **type**: ACL table type, it shall be specified to "**CTRLPLANE**" for service ACL.  
+* **services**: List of IP protocol to match. Valid values are :  
+  - **"SNMP"**: SNMP protocol.  
+  - **"NTP"**: NTP protocol.  
+  - **"SSH"**: SSH protocol.  
+For example: `"services": ["SNMP", "NTP"]`.
+
+The following show as an example, a JSON file named config_db.json include a service ACL. table-name: "SNMP_ACL". type: "CTRLPLANE". services: "SNMP".
+```
+{
+    "ACL_TABLE": {
+         "SNMP_ACL": {
+              "policy_desc": "Description for SNMP control plan",
+              "type": "CTRLPLANE",
+              "services": ["SNMP"]
+         }
+    }
+}
+```
+
+b. Use "sonic-cfggen" command to create ACL table:
+```
+admin@sonic:~$ sonic-cfggen -w -j config_db.json
+```
+
+**Step2**. Create ACL rules.
+
+a. Create a JSON file, the schema is:
+```
+{
+    "acl": {
+        "acl-sets": {
+            "acl-set": {
+                "<table_name>": {
+                    "acl-entries": {
+                        "acl-entry": {
+                            "<rule_name>": {
+                                "config": {
+                                    "sequence-id": <sequence_id>
+                                },
+                                "ip": {
+                                    "config":{
+                                        <ip-protocol-fields-common-config>
+                                    }
+                                },
+                                "transport": {
+                                    "config": {
+                                        <transport-fields-config>
+                                    }
+                                },
+                                "actions": {
+                                    "config":{
+                                        <action-config>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    }
+}
+```
+acl-set: List of ACL sets, each comprising of a list of ACL entries.  
+Key is ACL table name. Each element is acl-entries object. For example:  
+```
+{
+    "SNMP_ACL": {
+        "acl-entries": {
+            "acl-entry": { ... }
+        }
+    },
+    "SSH_ACL": {
+        ...
+    }
+}
+```
+acl-entries: Access list entries container.  
+acl-entry: The list of access list entries. Key is rule name. The value is:  
+```
+{
+    "rule_name_1": {
+         #access-list-entries-config#,
+         #ip-protocol-fields-common-config# (optional),
+         #transport-fields-config# (optional),
+         #action-config# (optional)
+    },
+    "rule_name_2": {
+         #access-list-entries-config#,
+         #ip-protocol-fields-common-config# (optional),
+         #transport-fields-config# (optional),
+         #action-config# (optional)
+    }
+}
+```
+* access-list-entries-config: Access List Entries (ACE) config.  
+* sequence-id: The sequence id determines the order in which ACL entries are applied. The sequence id must be unique for each entry in an ACL set. Target devices should apply the ACL entry rules in ascending order determined by sequence id (low to high), rather than the relying only on order in the list. Minimum: 0. Maximum: 9998. For example: "sequence-id": 1.  
+* ip-protocol-fields-common-config: IP protocol fields common to IPv4 and IPv6.  
+  * source-ip-address: The source IP address of packet. Valid value are :  
+    The string of IPv4 prefix (e.g. "192.168.1.1/32").  
+    The string of IPv6 prefix (e.g. "2001::db:1/128").  
+* transport-fields-config: Configuration data of transport-layer packet fields.  
+    tcp_flags: List of TCP flags to match. Valid values are :  
+    - "TCP_FIN": TCP FIN flag.  
+    - "TCP_SYN": TCP SYN flag.  
+    - "TCP_RST": TCP RST flag.  
+    - "TCP_PSH": TCP PSH flag.  
+    - "TCP_ACK": TCP ACK flag.  
+    - "TCP_URG": TCP URG flag.  
+    For example: `"tcp_flags": ["TCP_FIN", "TCP_SYN"]`.  
+
+* action-config: Config of action type.  
+  * forwarding-action: Specifies the forwarding action. One forwarding actionmust be specified for each ACL entry. One of :  
+    - "ACCEPT": Accept the packet.  
+    - "DROP" or "REJECT": Drop packet without sending any ICMP error message.  
+  For example: `"forwarding-action": "ACCEPT"`.  
+
+The following show as an example, a JSON file named snmp_service_rules.json specify an ACL rule in table SNMP_ACL. The SNMP packet with SIP=3.3.3.3 will be accepted in iptables.
+
+```
+{
+    "acl":
+    {
+        "acl-sets":
+        {
+            "acl-set":
+            {
+                "SNMP_ACL":
+                {
+                    "acl-entries":
+                    {
+                        "acl-entry":
+                        {
+                            "1":
+                            {
+                                "ip":
+                                {
+                                    "config":
+                                    {
+                                        "source-ip-address": "3.3.3.3/32"
+                                    }
+                                },
+                                "config":
+                                {
+                                    "sequence-id": 1
+                                },
+                                "actions":
+                                {
+                                    "config":
+                                    {
+                                        "forwarding-action": "ACCEPT"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+b. Use "sudo config acl update" command to add rules.
+```
+admin@sonic:~$ sudo config acl update incremental snmp_rules.json
+```
 
 ## sFlow
 
