@@ -1109,23 +1109,24 @@ The below example is to enable the fallback option.
 
 **aaa authentication login**
 
-This command is used to either configure whether AAA should use the local database or a remote tacacs+ database for user authentication. By default, AAA uses a local database for authentication. New users can be added/deleted using Linux commands (Note that the configuration done using Linux commands are not preserved during reboot). Admin can enable remote tacacs+ server based authentication by selecting the AUTH_PROTOCOL as tacacs+ in this command. Admins need to configure the tacacs+ server accordingly and ensure that the connectivity to the tacacs+ server is available via the management interface. Once admins choose the remote authentication based on tacacs+ server, all user logins will be authenticated by the tacacs+ server. If the authentication fails, AAA will check the "failthrough" configuration and authenticate the user based on the local database if failthrough is enabled.
+This command is used to configure AAA to use the local database, a remote ldap database or a remote tacacs+ database for user authentication. By default, AAA uses a local database for authentication. New users can be added/deleted using Linux commands (Note that the configuration done using Linux commands are not preserved during reboot). Admin can enable remote tacacs+ server or remote ldap server based authentication by selecting the AUTH_PROTOCOL as tacacs+ or ldap in this command. Admins need to configure the tacacs+ server or ldap server accordingly and ensure that the connectivity to the server is available via the management interface. Once admins choose the remote authentication based on tacacs+ server or ldap server, all user logins will be authenticated by the tacacs+ server or the ldap server. If the authentication fails, AAA will check the "failthrough" configuration and authenticate the user based on the local database if failthrough is enabled.
 
 - Usage:
   ```
-  config aaa authentication (tacacs+ | local | default)
+  config aaa authentication (ldap | tacacs+ | local | default)
   ```
 
   - Parameters:
+    - ldap: Enables remote authentication based on ldap
     - tacacs+: Enables remote authentication based on tacacs+
     - local: Disables remote authentication and uses local authentication
     - default: Reset back to default value, which is only "local" authentication
 
-The below command is to configure AAA to use remote tacacs+ database for user authentication.
+The below command is to configure AAA to use remote tacacs+ database and remote ldap database for user authentication.
 
 - Example:
   ```
-  admin@sonic:~$ sudo config aaa authentication login tacacs+
+  admin@sonic:~$ sudo config aaa authentication login tacacs+ local ldap
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#aaa--tacacs)
