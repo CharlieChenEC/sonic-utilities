@@ -2806,7 +2806,7 @@ def breakout(ctx, interface_name, mode, verbose, force_remove_dependencies, load
     if len(del_intf_dict) == len(add_intf_dict):
         need_port_breakout = False
         for intf in del_intf_dict.keys():
-            if del_ports[intf]["lanes"] != add_ports[intf]["lanes"]:
+            if intf not in add_intf_dict or del_ports[intf]["lanes"] != add_ports[intf]["lanes"]:
                 need_port_breakout = True
                 break
 
