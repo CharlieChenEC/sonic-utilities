@@ -52,11 +52,14 @@ COUNTER_TABLE_PREFIX = "COUNTERS:"
 COUNTERS_PORT_NAME_MAP = "COUNTERS_PORT_NAME_MAP"
 
 PORT_STATUS_TABLE_PREFIX = "PORT_TABLE:"
+PORT_INIT_DONE_KEY = "PortInitDone"
 PORT_OPER_STATUS_FIELD = "oper_status"
 PORT_ADMIN_STATUS_FIELD = "admin_status"
 PORT_STATUS_VALUE_UP = 'UP'
 PORT_STATUS_VALUE_DOWN = 'DOWN'
 PORT_SPEED_FIELD = "speed"
+
+PORT_INIT_TIMESTAMP_FIELD = "Timestamp"
 
 PORT_STATE_UP = 'U'
 PORT_STATE_DOWN = 'D'
@@ -67,6 +70,27 @@ class Portstat(object):
         self.db = swsssdk.SonicV2Connector(host='127.0.0.1')
         self.db.connect(self.db.COUNTERS_DB)
         self.db.connect(self.db.APPL_DB)
+
+    def get_default_cnstat(self):
+        """
+            Get the initial counters info after bootup.
+        """
+        fields = ["0","0","0","0","0","0","0","0","0","0"]
+        cntr = NStats._make(fields)
+        # Get the info from database
+        port_init_id = PORT_STATUS_TABLE_PREFIX + PORT_INIT_DONE_KEY
+        timestamp_data =  self.db.get(self.db.APPL_DB, port_init_id, PORT_INIT_TIMESTAMP_FIELD)
+        if timestamp_data is None:
+            return None
+        counter_port_name_map = self.db.get_all(self.db.COUNTERS_DB, COUNTERS_PORT_NAME_MAP)
+        # Build a dictionary of the stats
+        cnstat_dict = OrderedDict()
+        cnstat_dict['time'] = datetime.datetime.strptime(timestamp_data, "%Y-%m-%d %H:%M:%S")
+        if counter_port_name_map is None:
+            return cnstat_dict
+        for port in natsorted(counter_port_name_map):
+            cnstat_dict[port] = cntr
+        return cnstat_dict
 
     def get_cnstat(self):
         """
@@ -88,7 +112,7 @@ class Portstat(object):
             return cntr
 
         # Get the info from database
-        counter_port_name_map = self.db.get_all(self.db.COUNTERS_DB, COUNTERS_PORT_NAME_MAP);
+        counter_port_name_map = self.db.get_all(self.db.COUNTERS_DB, COUNTERS_PORT_NAME_MAP)
         # Build a dictionary of the stats
         cnstat_dict = OrderedDict()
         cnstat_dict['time'] = datetime.datetime.now()
@@ -381,7 +405,6 @@ Examples:
             print e.errno, e
             sys.exit(1)
 
-
     if save_fresh_stats:
         try:
             pickle.dump(cnstat_dict, open(cnstat_fqn_file, 'w'))
@@ -405,7 +428,15 @@ Examples:
                 print "\nFile '%s' does not exist" % cnstat_fqn_file
                 print "Did you run 'portstat -c -t %s' to record the counters via tag %s?\n" % (tag_name, tag_name)
             else:
-                portstat.cnstat_print(cnstat_dict, intf_list, use_json, print_all, errors_only, rates_only)
+                cnstat_default = portstat.get_default_cnstat()
+                if cnstat_default is None:
+                    print("[NOTICE] Cannot get default counter state to calculate the rate")
+                    print("Consider using 'sonic-clear counter' before calculating the counter rate")
+                    portstat.cnstat_print(cnstat_dict, intf_list, use_json, print_all, errors_only, rates_only)
+                else:
+                    print("[NOTICE] No cache file detected, use port ready time instead: " + str(cnstat_default.get('time')))
+                    print("Consider using 'sonic-clear counter' before calculating the counter rate")
+                    portstat.cnstat_diff_print(cnstat_dict, cnstat_default, intf_list, use_json, print_all, errors_only, rates_only)
     else:
         #wait for the specified time and then gather the new stats and output the difference.
         time.sleep(wait_time_in_seconds)
