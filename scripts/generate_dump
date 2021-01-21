@@ -384,6 +384,11 @@ main() {
     save_ip "route show table all" "route"
     save_ip "neigh" "neigh"
 
+    save_cmd "show ip interface" "ip.interface"
+    save_cmd "show ipv6 interface" "ipv6.interface"
+    save_cmd "show arp" "arp"
+    save_cmd "show ndp" "ndp"
+
     save_vtysh "show ip bgp summary" "bgp.summary"
     save_vtysh "show ip bgp neighbors" "bgp.neighbors"
     save_vtysh "show ip bgp" "bgp.table"
@@ -442,6 +447,11 @@ main() {
         save_cmd "bcmcmd -t5 version" "broadcom.version"
         save_cmd "bcmcmd -t5 soc" "broadcom.soc"
         save_cmd "bcmcmd -t5 ps" "broadcom.ps"
+        save_cmd "bcmcmd \"l3 l3table show\"" "broadcom.l3table"
+        save_cmd "bcmcmd \"l3 defip show\"" "broadcom.l3.defip"
+        save_cmd "bcmcmd \"l3 egress show\"" "broadcom.l3.egress"
+        save_cmd "bcmcmd \"l3 intf show\"" "broadcom.l3.intf"
+        save_cmd "bcmcmd \"l3 multipath show\"" "broadcom.l3.multipath"
         save_cmd "cat /proc/bcm/knet/debug" "broadcom.knet.debug"
         save_cmd "cat /proc/bcm/knet/dma" "broadcom.knet.dma"
         save_cmd "cat /proc/bcm/knet/dstats" "broadcom.knet.dstats"
