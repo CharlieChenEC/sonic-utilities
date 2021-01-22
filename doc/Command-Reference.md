@@ -127,7 +127,7 @@
 * [VLAN & FDB](#vlan--fdb)
   * [VLAN](#vlan)
     * [VLAN show commands](#vlan-show-commands)
-    * [VLAN Config commands](#vlan-config-commands)
+    * [VLAN config commands](#vlan-config-commands)
   * [FDB](#fdb)
     * [FDB show commands](#fdb-show-commands)
 * [VxLAN & Vnet](#vxlan--vnet)
@@ -4494,7 +4494,7 @@ The list of the WRED profile fields that are configurable is listed in the below
     - green_threshold_max   Set green max threshold
     - green_threshold_min   Set green min threshold
 
-  Note: The command only can be used to configure the existed WRED profile and being bound to queue. Not support to create WRED profile and only limited fields can be configured. 
+  Note: The command only can be used to configure the existed WRED profile and being bound to queue. Not support to create WRED profile and only limited fields can be configured.
 
   Firstly, create a json file (here named ecn.json as an example) which includes a WRED profile (e.g., AZURE_LOSSLESS) and bind to Ethernet0 queue 3 and Ethernet 4 queue4.
 
@@ -7036,7 +7036,7 @@ This command starts PFC Watchdog
 - Usage:
   ```
   config pfcwd start [--action (drop | forward | alert)] [--restoration-time <ms_value>] ports (all | <PORTS>) detection-time <ms_value>
- 
+
   all     : All ethernet ports
   <PORTS> : <ethernet_interface_name> seperate by space ' ', e.g Ethernet0 Ethernet1 Ethernet2
   ```
@@ -9279,7 +9279,7 @@ This command displays all the vlan configuration.
   ```
 
 
-#### VLAN Config commands
+#### VLAN config commands
 
 This sub-section explains how to configure the vlan and its member ports.
 
@@ -9307,8 +9307,8 @@ This command is to add or delete a member port into the already created vlan.
   ```
 
   *NOTE:*
-    * Adding the -u or --untagged flag will set the member in "untagged" mode
-    * Not allow to add ethernet port / port channel with L3 configuration to VLAN. The device only check ethernet port with L3 configuration currently. Add Port channel with L3 configuration to VLAN will cause vlanmgrd crashed now.
+    * Adding the -u or --untagged flag will set the member in "untagged" mode.
+    * Not allow to add ethernet port / port channel with L3 configuration to VLAN.
 
 
 - Example (Add Ethernet0 as member of the vlan 100):
@@ -10320,7 +10320,7 @@ If the SONiC system was running for quite some time `show techsupport` will prod
   admin@sonic:~$ show techsupport --since='hour ago' # Will collect syslog and core files for the last one hour
   ```
 
-Note that the archive file can be reduced to MB level and the time to collect data can also be decreased once the log files have not included.  
+Note that the archive file can be reduced to MB level and the time to collect data can also be decreased once the log files have not included.
 There is an alternative way to collect dump file with the command output and log files separately:
 
 - Examples:
