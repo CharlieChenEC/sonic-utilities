@@ -374,6 +374,30 @@ main() {
     save_cmd "cat /host/machine.conf" "machine.conf"
     save_cmd "docker stats --no-stream" "docker.stats"
 
+    save_cmd "show boot" "boot"
+    save_cmd "show mac" "mac"
+    save_cmd "show vlan brief" "vlan.brief"
+    save_cmd "show vrf" "vrf"
+    save_cmd "show ip route vrf all" "ip.route.vrf.all"
+    save_cmd "show interface portchannel" "interface.portchannel"
+    save_cmd "show vxlan interface" "vxlan.interface"
+    save_cmd "show vxlan tunnel" "vxlan.tunnel"
+    save_cmd "show vxlan vlanvnimap" "vxlan.vlanvnimap"
+    save_cmd "show vxlan vrfvnimap" "vxlan.vrfvnimap"
+    save_cmd "show pfc counter" "pfc.counter"
+    save_cmd "show queue counter" "queue.counter"
+    save_cmd "show sflow" "sflow"
+    save_cmd "show sflow interface" "sflow.interface"
+    save_cmd "show ntp" "ntp"
+    save_cmd "show mgmt-vrf" "mgmt.vrf"
+    save_cmd "show tacacs" "tacacs"
+    save_cmd "show aaa" "aaa"
+    save_cmd "show mirror_session" "mirror.session"
+    save_cmd "show acl table" "acl.table"
+    save_cmd "show acl rule" "acl.rule"
+    save_cmd "show sag" "sag"
+    save_cmd "show neigh-suppress all" "neigh.suppress.all"
+
     save_cmd "sensors" "sensors"
     save_cmd "lspci -vvv -xx" "lspci"
     save_cmd "lsusb -v" "lsusb"
@@ -389,12 +413,19 @@ main() {
     save_cmd "show arp" "arp"
     save_cmd "show ndp" "ndp"
 
+    save_vtysh "show bgp summary" "v4.v6.bgp.summary"
     save_vtysh "show ip bgp summary" "bgp.summary"
     save_vtysh "show ip bgp neighbors" "bgp.neighbors"
     save_vtysh "show ip bgp" "bgp.table"
     save_vtysh "show bgp ipv6 summary" "bgp.ipv6.summary"
     save_vtysh "show bgp ipv6 neighbors" "bgp.ipv6.neighbors"
     save_vtysh "show bgp ipv6" "bgp.ipv6.table"
+    save_vtysh "show run" "running_config"
+    save_vtysh "show ip bgp l2vpn evpn" "ip.bgp.l2vpn.evpn"
+    save_vtysh "show evpn" "evpn"
+    save_vtysh "show evpn vni detail" "evpn.vni.detail"
+    save_vtysh "show evpn arp-cache vni all" "evpn.arp.cache.vni.all"
+    save_vtysh "show evpn mac vni all" "evpn.mac.vni.all"
     save_bgp_neighbor
 
     save_cmd "show interface status" "interface.status"
@@ -412,6 +443,12 @@ main() {
     save_cmd "mount" "mount"
     save_cmd "df" "df"
     save_cmd "dmesg" "dmesg"
+
+    save_cmd "sudo bridge fdb show" "bridge.fdb"
+    save_cmd "mclagdctl dump state" "mclagdctl.dump.state"
+    save_cmd "sudo journalctl -xe" "journalctl.xe"
+    save_cmd "sudo arp -a" "arp.a"
+    save_cmd "sudo sonic_installer list" "sonic.installer.list"
 
     save_nat_info
 
@@ -447,6 +484,7 @@ main() {
         save_cmd "bcmcmd -t5 version" "broadcom.version"
         save_cmd "bcmcmd -t5 soc" "broadcom.soc"
         save_cmd "bcmcmd -t5 ps" "broadcom.ps"
+        save_cmd "bcmcmd \"l2 show\"" "broadcom.l2"
         save_cmd "bcmcmd \"l3 l3table show\"" "broadcom.l3table"
         save_cmd "bcmcmd \"l3 defip show\"" "broadcom.l3.defip"
         save_cmd "bcmcmd \"l3 egress show\"" "broadcom.l3.egress"
@@ -534,6 +572,28 @@ main() {
             fi
         fi
     done
+
+    # archive /sys/bus/i2c/devices/
+    tar -zcf sys.bus.i2c.devices.tar.gz /sys/bus/i2c/devices/
+    save_file sys.bus.i2c.devices.tar.gz sys.bus.i2c.devices.tar.gz false
+    rm sys.bus.i2c.devices.tar.gz
+
+    # archive /usr/share/sonic/device/
+    tar -zcf usr.share.sonic.device.tar.gz /usr/share/sonic/device/
+    save_file usr.share.sonic.device.tar.gz usr.share.sonic.device.tar.gz false
+    rm usr.share.sonic.device.tar.gz
+
+    # archive /var/cache/sonic/
+    tar -zcf var.cache.sonic.tar.gz /var/cache/sonic/
+    save_file var.cache.sonic.tar.gz var.cache.sonic.tar.gz false
+    rm var.cache.sonic.tar.gz
+
+    # archive syncd:/usr/share/sonic
+    docker cp syncd:/usr/share/sonic ./syncd.usr.share.sonic
+    tar -zcf syncd.usr.share.sonic.tar.gz ./syncd.usr.share.sonic
+    save_file syncd.usr.share.sonic.tar.gz syncd.usr.share.sonic.tar.gz false
+    rm syncd.usr.share.sonic.tar.gz
+    rm -rf syncd.usr.share.sonic
 
     # run 'hw-management-generate-dump.sh' script and save the result file
     /usr/bin/hw-management-generate-dump.sh
