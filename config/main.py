@@ -2687,6 +2687,40 @@ def interface(ctx):
     ctx.obj['config_db'] = config_db
 
 #
+# config interface rate-limit bind in <interface> <profile_name>
+#
+@interface.command(name='rate-limit')
+@click.argument('op', metavar='<op>', type=click.Choice(['bind', 'unbind']), required=True)
+@click.argument('dir', metavar='<dir>', type=click.Choice(['in', 'out']), required=True)
+@click.argument('interface_name', metavar='<interface_name>', required=True)
+@click.argument('profile_name', metavar='<profile_name>', required=False)
+@click.option('-q', '--queue', help='queue', required=False)
+@click.pass_context
+def rate_limit(ctx, op, dir, interface_name, profile_name, queue):
+    """Rate limit configuration."""
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    field_key = 'ing_scheduler' if dir == 'in' else 'egr_scheduler'
+
+    if op == 'bind':
+        data = {
+            field_key: '[SCHEDULER|{}]'.format(profile_name)
+        }
+
+        config_db.mod_entry('PORT_QOS_MAP', interface_name, data)
+    else:
+        cur_data = config_db.get_entry('PORT_QOS_MAP', interface_name)
+
+        if field_key not in cur_data.keys():
+            ctx.fail("Not set  rate limit profile on Interface {}".format(interface_name))
+
+        del cur_data[field_key]
+
+        config_db.set_entry('PORT_QOS_MAP', interface_name, cur_data)
+
+#
 # 'startup' subcommand
 #
 
