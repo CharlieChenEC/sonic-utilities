@@ -3665,6 +3665,14 @@ def get_acl_bound_ports():
 #
 # 'table' subcommand ('config acl add table ...')
 #
+def validate_services(ctx, param, value):
+    service_list = value.split(',')
+
+    for s in service_list:
+        if s not in ['SSH', 'SNMP', 'NTP']:
+            raise click.BadParameter('{} is not a valid service.'.format(value))
+
+    return service_list
 
 @add.command()
 @click.argument("table_name", metavar="<table_name>")
@@ -3672,7 +3680,9 @@ def get_acl_bound_ports():
 @click.option("-d", "--description")
 @click.option("-p", "--ports")
 @click.option("-s", "--stage", type=click.Choice(["ingress", "egress"]), default="ingress")
-def table(table_name, table_type, description, ports, stage):
+# @click.option("-v", "--services", type=click.Choice(["NTP", "SNMP", "SSH"]), multiple=True, callback=validate_service)
+@click.option("-S", "--services", callback=validate_services)
+def table(table_name, table_type, description, ports, stage, services):
     """
     Add ACL table
     """
@@ -3692,6 +3702,9 @@ def table(table_name, table_type, description, ports, stage):
         table_info["ports@"] = ",".join(get_acl_bound_ports())
 
     table_info["stage"] = stage
+
+    if services:
+        table_info["services@"] = ",".join(services)
 
     config_db.set_entry("ACL_TABLE", table_name, table_info)
 
