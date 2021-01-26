@@ -4258,5 +4258,80 @@ def config(ctx):
 
     click.echo(tabulate(body, header))
 
+#
+# ' qos' command ("show qos ...")
+#
+@cli.group(cls=AliasedGroup)
+@click.pass_context
+def qos(ctx):
+    '''Show qos related information'''
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    app_db = ConfigDBConnector()
+    app_db.db_connect(app_db.APPL_DB)
+    state_db = ConfigDBConnector()
+    state_db.db_connect(state_db.STATE_DB)
+    ctx.obj = {'config_db': config_db, 'app_db': app_db, 'state_db': state_db}
+    pass
+
+#
+# 'qos scheduler' command ("show qos scheduler ")
+#
+@qos.command('scheduler')
+@click.pass_context
+def scheduler(ctx):
+    '''Show qos scheduler'''
+
+    config_db = ctx.obj['config_db']
+
+    header = ['Name', 'Meter Type', 'PIR', 'PBS']
+    body = []
+    scheduler_data = config_db.get_table('SCHEDULER')
+    scheduler_keys = natsorted(scheduler_data.keys())
+
+    for k in scheduler_keys:
+        body.append([k, scheduler_data[k].get('meter_type'), scheduler_data[k].get('pir'), scheduler_data[k].get('pbs')])
+
+    click.echo(tabulate(body, header))
+
+def get_key(table, entry):
+    if entry == None:
+        return entry
+
+    match = re.search('^\[{}\|([\w\s\S]*)\]$'.format(table), entry)
+    if match == None:
+        return entry
+
+    return match.group(1)
+
+# 'qos interface' command ("show qos interface")
+@qos.command('interface')
+@click.pass_context
+def interface_qos(ctx):
+    '''Show Interface qos'''
+
+    config_db = ctx.obj['config_db']
+
+    header = ['Interface', 'Ingress Port Rate Limit', 'Egress Port Rate Limit']
+    body = []
+    port_qos_map_data = config_db.get_table('PORT_QOS_MAP')
+    port_qos_map_keys = natsorted(port_qos_map_data.keys())
+
+    for k in port_qos_map_keys:
+        ing_scheduler_prof = port_qos_map_data[k].get('ing_scheduler', None)
+        # click.echo('  Ingress Rate Limit: {}'.format(ing_scheduler_prof))
+
+        egr_scheduler_prof = port_qos_map_data[k].get('egr_scheduler', None)
+        if egr_scheduler_prof == None:
+            egr_scheduler_prof = port_qos_map_data[k].get('scheduler', None)
+
+        # click.echo('  Egress Rate Limit : {}'.format(egr_scheduler_prof))
+        ing_scheduler_prof = get_key('SCHEDULER', ing_scheduler_prof)
+        egr_scheduler_prof = get_key('SCHEDULER', egr_scheduler_prof)
+
+        body.append([k, ing_scheduler_prof, egr_scheduler_prof])
+
+    click.echo(tabulate(body, header))
+
 if __name__ == '__main__':
     cli()
