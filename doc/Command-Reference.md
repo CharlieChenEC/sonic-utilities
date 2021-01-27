@@ -1553,7 +1553,7 @@ This command is used to add ACL table.
 
 - Usage:
   ```
-  config acl add table <table_name> <table_type> [(-d | --description) <description>] [(-p | --ports) <interfaces>] [(-s | --stage) (ingress | egress)]
+  config acl add table <table_name> <table_type> [(-d | --description) <description>] [(-p | --ports) <interfaces>] [(-s | --stage) (ingress | egress)] [(-v | --services) <services_string>]
   ```
 
   - Parameters
@@ -1570,6 +1570,8 @@ This command is used to add ACL table.
       - Default is all front Ethernet and PortChannel ports.
       - Mix VLAN to Ethernet or PortChannel is not allowed.
 	- stage: The stage. The default value is ingress.
+  - services: The services for the ACL table.
+      - For configure multiple services, using comma to separate each service.
 
 The following example shows create a IPv4 ACL DATA_L3 and bind it to Ethernet0 and Ethernet4 at ingress direction.
 - Example:
@@ -1581,6 +1583,12 @@ The following example shows create a IPv6 ACL DATA_L3V6 and bind it to PortChann
 - Example:
   ```
   admin@sonic:~$ sudo config acl add table DATA_L3V6 L3V6 --description "L3V6 table" --ports "PortChannel0001,PortChannel0002" --stage "ingress"
+  ```
+
+The following example shows create a CTRLPLANE ACL DATA_CTRL for SSH and SNMP services.
+- Example:
+  ```
+  admin@sonic:~$ sudo config acl add table DATA_CTRL CTRLPLANE --description "CTRLPLANE table" --services "SSH,SNMP"
   ```
 
 **CAUTION: The system will crash while the usage of TCAM reaches the limit of system hardware resource. The usage of the ACL table is hardware dependent. For more detail, please refer to ACL HLD.**
