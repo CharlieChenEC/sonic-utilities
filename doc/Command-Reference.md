@@ -7654,6 +7654,46 @@ This command displays the lossless priorities for all interfaces or a given inte
 
 - NOTE: To enable pfc use the config interface pfc priority command.
 
+#### QoS
+
+**show qos scheduler**
+
+This command displays the QoS-Scheduler profiles.
+
+- Usage:
+  ```
+  show qos scheduler
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ show qos scheduler
+  Name                    Meter Type       PIR    PBS
+  ----------------------  ------------  ------  -----
+  scheduler.egress.port   packets       200000  81920
+  scheduler.ingress.port  packets       100000   8192
+  ...
+  ```
+
+**show qos interface**
+
+This command displays the QoS profiles usage on interface.
+
+- Usage:
+  ```
+  show qos interface
+  ```
+
+- Example:
+  ```
+  admin@sonic:~$ show qos interface
+  Interface    Ingress Port Rate Limit             Egress Port Rate Limit
+  -----------  ----------------------------------  ---------------------------------
+  Ethernet0    scheduler.ingress.port
+  Ethernet4                                        scheduler.egress.port
+  ...
+  ```
+
 #### Queue And Priority-Group
 
 This sub-section explains the following queue parameters that can be displayed using "show queue" command.
