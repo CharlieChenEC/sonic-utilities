@@ -32,6 +32,10 @@
 * [ARP & NDP](#arp--ndp)
   * [ARP show commands](#arp-show-commands)
   * [NDP show commands](#ndp-show-commands)
+* [BFD](#bfd)
+  * [BFD Show Commands](#bfd-show-commands)
+  * [BFD Peer Specific Commands](#bfd-peer-specific-commands)
+  * [BGP BFD Commands](#bgp-bfd-commands)
 * [BGP](#bgp)
   * [BGP show commands](#bgp-show-commands)
   * [BGP config commands](#bgp-config-commands)
@@ -1903,6 +1907,507 @@ This command displays either all the IPv6 neighbor mac addresses, or for a parti
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#arp--ndp)
+
+
+## BFD
+
+Bidirectional Forwarding Detection (BFD) uses the FRR vtysh shell CLI. The following commands are available in the FRR shell. Use command *vtysh* to enter FRR mode.
+
+- Example:
+  ```
+  admin@sonic:~$ vtysh
+
+  Hello, this is FRRouting (version 7.2.1-sonic).
+  Copyright 1996-2005 Kunihiro Ishiguro, et al.
+
+  sonic#
+  ```
+Refer to [FRR BFDd Commands](http://docs.frrouting.org/en/latest/bfd.html#bfdd-commands) and [FRR BGP Commands](http://docs.frrouting.org/en/latest/bgp.html) for more related FRR commands.
+
+
+### BFD Show Commands
+
+This sub-section explains how to display BFD information.
+
+
+**show bfd peers**
+
+Shows all configured BFD peer information and the current status.
+
+- Usage:
+  ```
+  show bfd [vrf <vrf_name>] peers [json]
+  ```
+
+- Example:
+  ```
+  sonic# show bfd peers
+  BFD Peers:
+          peer 192.169.3.33 vrf default
+                  ID: 1766365608
+                  Remote ID: 455730325
+                  Status: up
+                  Uptime: 9 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+
+          peer 192.169.1.11 vrf default
+                  ID: 1991080464
+                  Remote ID: 3120344281
+                  Status: up
+                  Uptime: 2 hour(s), 5 minute(s), 11 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+  ```
+
+- Example (json):
+  ```
+  sonic# show bfd peers json
+  [{"multihop":false,"peer":"192.169.3.33","vrf":"default","id":1766365608,"remote-id":455730325,"status":"up","uptime":355,"diagnostic":"ok","remote-diagnostic":"ok","receive-interval":300,"transmit-interval":300,"echo-interval":0,"remote-receive-interval":300,"remote-transmit-interval":300,"remote-echo-interval":50},{"multihop":false,"peer":"192.169.1.11","vrf":"default","id":1991080464,"remote-id":3120344281,"status":"up","uptime":7857,"diagnostic":"ok","remote-diagnostic":"ok","receive-interval":300,"transmit-interval":300,"echo-interval":0,"remote-receive-interval":300,"remote-transmit-interval":300,"remote-echo-interval":50}]
+  ```
+
+
+**show bfd peer**
+
+Shows specified BFD peer information and the current status.
+
+- Usage:
+  ```
+  show bfd [vrf <vrf_name>] peer [ipv4_addr|peer_label|ipv6_addr]
+  ```
+
+- Example:
+  ```
+  sonic# show bfd vrf default peer 192.169.1.11
+  BFD Peer:
+          peer 192.169.1.11 vrf default
+                  ID: 1991080464
+                  Remote ID: 3120344281
+                  Status: up
+                  Uptime: 2 hour(s), 42 minute(s), 25 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+  ```
+
+- Example (json):
+  ```
+  sonic# show bfd peer 192.169.1.11 json
+  {"multihop":false,"peer":"192.169.1.11","vrf":"default","id":1991080464,"remote-id":3120344281,"status":"up","uptime":10273,"diagnostic":"ok","remote-diagnostic":"ok","receive-interval":300,"transmit-interval":300,"echo-interval":0,"remote-receive-interval":300,"remote-transmit-interval":300,"remote-echo-interval":50}
+  ```
+
+
+**show bfd peer(s) counters**
+
+Shows BFD counters for a particular BFD session.
+
+- Usage:
+  ```
+  show bfd peer counters
+  show bfd peers counters
+  ```
+
+- Example (all peers):
+  ```
+  sonic# show bfd peers counters
+  BFD Peers:
+          peer 192.169.3.33 vrf default
+                  Control packet input: 15996 packets
+                  Control packet output: 16008 packets
+                  Echo packet input: 0 packets
+                  Echo packet output: 0 packets
+                  Session up events: 1
+                  Session down events: 0
+                  Zebra notifications: 1
+
+          peer 192.169.1.11 vrf default
+                  Control packet input: 44536 packets
+                  Control packet output: 44542 packets
+                  Echo packet input: 0 packets
+                  Echo packet output: 0 packets
+                  Session up events: 1
+                  Session down events: 0
+                  Zebra notifications: 1
+  ```
+
+- Example (specified peer):
+  ```
+  sonic# show bfd peer 192.169.3.33 counters
+          peer 192.169.3.33 vrf default
+                  Control packet input: 16032 packets
+                  Control packet output: 16044 packets
+                  Echo packet input: 0 packets
+                  Echo packet output: 0 packets
+                  Session up events: 1
+                  Session down events: 0
+                  Zebra notifications: 1
+  ```
+
+
+### BFD Peer Specific Commands
+
+This sub-section explains how to configure a BFD peer and its settings.
+
+All commands in this sub-section are entered in BFD mode. Use the *bfd* command to open the BFD daemon configuration mode.
+
+- Usage:
+  ```
+  bfd
+  ```
+
+- Example:
+  ```
+  sonic# config
+  sonic(config)# bfd
+  sonic(config-bfd)#
+  ```
+
+
+**peer**
+
+Creates and configures a new BFD peer to listen and talk to.
+
+- Usage:
+  ```
+  peer <ipv4_addr|ipv6_addr>
+  ```
+
+- Example:
+  ```
+  sonic(config-bfd)# peer 192.169.1.11
+  sonic(config-bfd-peer)#
+  ```
+
+
+**receive-interval**
+
+Configures the minimum interval that this system is capable of receiving control packets. The default value is 300 milliseconds.
+
+- Usage:
+  ```
+  receive-interval <value_in_ms>
+  ```
+
+- Example:
+  ```
+  sonic(config-bfd)# peer 192.169.1.11
+  sonic(config-bfd-peer)# receive-interval 1000
+  sonic(config-bfd-peer)# end
+  sonic# show bfd peer 192.169.1.11
+  BFD Peer:
+          peer 192.169.1.11 vrf default
+                  ID: 1991080464
+                  Remote ID: 3120344281
+                  Status: up
+                  Uptime: 4 hour(s), 11 minute(s), 22 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 1000ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+  ```
+
+
+**transmit-interval**
+
+Configures the minimum transmission interval that this system wants to use to send BFD control packets. The default value is 300 milliseconds.
+
+- Usage:
+  ```
+  transmit-interval <value_in_ms>
+  ```
+
+- Example:
+  ```
+  sonic(config-bfd)# peer 192.169.1.11
+  sonic(config-bfd-peer)# transmit-interval 1000
+  sonic(config-bfd-peer)# end
+  sonic# show bfd peer 192.169.1.11
+  BFD Peer:
+          peer 192.169.1.11 vrf default
+                  ID: 1991080464
+                  Remote ID: 3120344281
+                  Status: up
+                  Uptime: 4 hour(s), 13 minute(s), 36 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 1000ms
+                          Transmission interval: 1000ms
+                          Echo transmission interval: 50ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+  ```
+
+
+**echo-interval**
+
+Configures the minimum echo receive transmission interval. The default value is 50 milliseconds.
+
+- Usage:
+  ```
+  echo-interval <value_in_ms>
+  ```
+
+- Example:
+  ```
+  sonic(config-bfd)# peer 192.169.1.11
+  sonic(config-bfd-peer)# echo-interval 100
+  sonic(config-bfd-peer)# end
+  sonic# show bfd peer 192.169.1.11
+  BFD Peer:
+          peer 192.169.1.11 vrf default
+                  ID: 1991080464
+                  Remote ID: 3120344281
+                  Status: up
+                  Uptime: 4 hour(s), 29 minute(s), 12 second(s)
+                  Diagnostics: ok
+                  Remote diagnostics: ok
+                  Local timers:
+                          Receive interval: 1000ms
+                          Transmission interval: 1000ms
+                          Echo transmission interval: 100ms
+                  Remote timers:
+                          Receive interval: 300ms
+                          Transmission interval: 300ms
+                          Echo transmission interval: 50ms
+  ```
+
+
+**echo-mode**
+
+Enables/disables the echo transmission mode. This mode is disabled by default.
+It is recommended that the transmission interval of control packets to be increased after enabling echo-mode to reduce bandwidth usage. For example: transmit-interval 2000.
+When using multi-hop mode, *echo-mode* will not work (see RFC 5883 section 3).
+
+- Usage:
+  ```
+  [no] echo-mode
+  ```
+
+- Example:
+  ```
+  sonic(config-bfd)# peer 192.169.1.11
+  sonic(config-bfd-peer)# echo-mode
+  sonic(config-bfd-peer)# no echo-mode
+  ```
+
+
+### BGP BFD Commands
+
+This sub-section explains how to configure or display BFD related settings on BGP neighbors.
+The following commands are available in BGP configuration mode.
+
+- Usage:
+  ```
+  router bgp <as_id>
+  ```
+
+- Example:
+  ```
+  sonic# config
+  sonic(config)# router bgp 65101
+  sonic(config-router)#
+  ```
+
+
+**bfd**
+
+Enables/disables BFD on BGP neighbors.
+
+- Usage:
+  ```
+  [no] neighbor <ipv4_addr|ipv6_addr|peer_label> bfd
+  ```
+
+- Example:
+  ```
+  sonic(config-router)# neighbor 192.169.0.2 remote-as 65101
+  sonic(config-router)# neighbor 192.169.0.2 bfd
+  ```
+
+
+**ebgp-multihop**
+
+Specifying *ebgp-multihop* allows sessions with eBGP neighbors to establish when they are multiple hops away.
+
+- Usage:
+  ```
+  [no] neighbor <ipv4_addr|neighbor_interface|ipv6_addr> ebgp-multihop
+  ```
+
+- Example:
+  ```
+  sonic(config-router)# neighbor 192.169.0.2 ebgp-multihop
+  ```
+
+
+**bfd info on bgp neighbors**
+
+When BGP neighbors use BFD to detect if the next hop router is alive, the BFD related information is shown in *show bgp neighbors*.
+
+- Usage:
+  ```
+  show bgp neighbors [ipv4_addr|neighbor_interface|ipv6_addr]
+  ```
+
+- Example (single hop):
+  ```
+  sonic# config
+  sonic(config)# router bgp 65101
+  sonic(config-router)# neighbor 192.169.0.2 remote-as 65101
+  sonic(config-router)# neighbor 192.169.0.2 bfd
+  sonic(config-router)# end
+  sonic# show bgp neighbors
+  BGP neighbor is 192.169.0.2, remote AS 65101, local AS 65101, internal link
+  Hostname: sonic
+    BGP version 4, remote router ID 192.169.0.2, local router ID 192.169.0.1
+    BGP state = Established, up for 00:01:18
+    Last read 00:00:18, Last write 00:00:18
+    Hold time is 180, keepalive interval is 60 seconds
+    Neighbor capabilities:
+      4 Byte AS: advertised and received
+      AddPath:
+        IPv4 Unicast: RX advertised IPv4 Unicast and received
+      Route refresh: advertised and received(old & new)
+      Address Family IPv4 Unicast: advertised and received
+      Hostname Capability: advertised (name: sonic,domain name: n/a) received (name: sonic,domain name: n/a)
+      Graceful Restart Capabilty: advertised and received
+        Remote Restart timer is 120 seconds
+        Address families by peer:
+          none
+    Graceful restart information:
+      End-of-RIB send: IPv4 Unicast
+      End-of-RIB received: IPv4 Unicast
+    Message statistics:
+      Inq depth is 0
+      Outq depth is 0
+                          Sent       Rcvd
+      Opens:                  1          1
+      Notifications:          0          0
+      Updates:                1          1
+      Keepalives:             2          2
+      Route Refresh:          0          0
+      Capability:             0          0
+      Total:                  4          4
+    Minimum time between advertisement runs is 0 seconds
+
+  For address family: IPv4 Unicast
+    Update group 1, subgroup 1
+    Packet Queue length 0
+    Community attribute sent to this neighbor(all)
+    0 accepted prefixes
+
+    Connections established 1; dropped 0
+    Last reset 00:01:36,   No AFI/SAFI activated for peer
+  Local host: 192.169.0.1, Local port: 179
+  Foreign host: 192.169.0.2, Foreign port: 53912
+  Nexthop: 192.169.0.1
+  Nexthop global: fe80::6f8:f8ff:fee5:c2ba
+  Nexthop local: fe80::6f8:f8ff:fee5:c2ba
+  BGP connection: shared network
+  BGP Connect Retry Timer in Seconds: 120
+  Read thread: on  Write thread: on  FD used: 27
+
+    BFD: Type: single hop
+      Detect Multiplier: 3, Min Rx interval: 300, Min Tx interval: 300
+      Status: Up, Last update: 0:00:00:05
+  ```
+
+- Example (multi hop):
+  ```
+  sonic# config
+  sonic(config)# router bgp 65101
+  sonic(config-router)# neighbor 192.169.2.2 remote-as 65102
+  sonic(config-router)# neighbor 192.169.2.2 ebgp-multihop
+  sonic(config-router)# neighbor 192.169.2.2 bfd
+  sonic# show bgp neighbors
+  BGP neighbor is 192.169.2.2, remote AS 65102, local AS 65101, external link
+  Hostname: sonic
+    BGP version 4, remote router ID 192.169.2.2, local router ID 192.169.1.1
+    BGP state = Established, up for 00:00:02
+    Last read 00:00:01, Last write 00:00:01
+    Hold time is 180, keepalive interval is 60 seconds
+    Neighbor capabilities:
+      4 Byte AS: advertised and received
+      AddPath:
+        IPv4 Unicast: RX advertised IPv4 Unicast and received
+      Route refresh: advertised and received(old & new)
+      Address Family IPv4 Unicast: advertised and received
+      Hostname Capability: advertised (name: sonic,domain name: n/a) received (name: sonic,domain name: n/a)
+      Graceful Restart Capabilty: advertised and received
+        Remote Restart timer is 120 seconds
+        Address families by peer:
+          none
+    Graceful restart information:
+      End-of-RIB send: IPv4 Unicast
+      End-of-RIB received: IPv4 Unicast
+    Message statistics:
+      Inq depth is 0
+      Outq depth is 0
+                          Sent       Rcvd
+      Opens:                  2          2
+      Notifications:          0          0
+      Updates:                2          2
+      Keepalives:             5          5
+      Route Refresh:          0          0
+      Capability:             0          0
+      Total:                  9          9
+    Minimum time between advertisement runs is 0 seconds
+
+  For address family: IPv4 Unicast
+    Update group 2, subgroup 2
+    Packet Queue length 0
+    Community attribute sent to this neighbor(all)
+    0 accepted prefixes
+
+    Connections established 2; dropped 1
+    Last reset 00:01:59,   Waiting for NHT
+    External BGP neighbor may be up to 255 hops away.
+  Local host: 192.169.1.1, Local port: 51462
+  Foreign host: 192.169.2.2, Foreign port: 179
+  Nexthop: 192.169.1.1
+  Nexthop global: fe80::6f8:f8ff:fee5:c2ba
+  Nexthop local: fe80::6f8:f8ff:fee5:c2ba
+  BGP connection: non shared network
+  BGP Connect Retry Timer in Seconds: 120
+  Estimated round trip time: 877 ms
+  Read thread: on  Write thread: on  FD used: 27
+
+    BFD: Type: multi hop
+      Detect Multiplier: 3, Min Rx interval: 300, Min Tx interval: 300
+      Status: Up, Last update: 0:00:00:02
+  ```
 
 
 ## BGP
