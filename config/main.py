@@ -3666,6 +3666,9 @@ def get_acl_bound_ports():
 # 'table' subcommand ('config acl add table ...')
 #
 def validate_services(ctx, param, value):
+    if value == None:
+        return None
+
     service_list = value.split(',')
 
     for s in service_list:
