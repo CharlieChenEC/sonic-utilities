@@ -71,7 +71,25 @@ class portconfig(object):
 
             conv_speed = "{}G".format(str(speed/1000))
             if conv_speed not in speed_list:
-               raise Exception("Can't set the port speed.")
+                speed_set = set()
+                for item in speed_list:
+                    if 'G' in item:
+                        speed_item = item.replace('G', '000')
+                        speed_set.add(speed_item)
+                    elif 'M' in item:
+                        speed_item = item.replace('M', '00')
+                        speed_set.add(speed_item)
+
+                index = 0
+                print("Can't set the port speed. Only support port speed:", end=" ")
+                for item in speed_set:
+                    index = index + 1
+                    if index == len(speed_set):
+                        print(item, end=".")
+                    else:
+                        print(item, end=", ")
+                print(end="\n")
+                raise Exception
 
         self.db.mod_entry(PORT_TABLE_NAME, port, {PORT_SPEED_CONFIG_FIELD_NAME: speed})
 
