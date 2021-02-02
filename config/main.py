@@ -3353,7 +3353,7 @@ def bind(ctx, interface_name, vrf_name):
     time.sleep(1)
 
     # Disable IPv6 on the interface to prevent creating IPv6 link-local address
-    if interface_name.startswith("Loopback") is False:
+    if interface_name.startswith("Loopback") is False and interface_name.find(VLAN_SUB_INTERFACE_SEPARATOR) == -1:
         cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=1 -q'.format(interface_name)
         run_command(cmd, display_cmd=False)
 
@@ -3388,7 +3388,7 @@ def bind(ctx, interface_name, vrf_name):
                     set_sag_interface(ctx, config_db,'IPv6', interface_name, ip_addr)
 
     # Enable IPv6 on the interface to sync IPv6 link-local address
-    if interface_name.startswith("Loopback") is False:
+    if interface_name.startswith("Loopback") is False and interface_name.find(VLAN_SUB_INTERFACE_SEPARATOR) == -1:
         cmd = 'sysctl -w net.ipv6.conf.{}.disable_ipv6=0 -q'.format(interface_name)
         run_command(cmd, display_cmd=False)
 
