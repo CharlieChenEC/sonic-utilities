@@ -938,7 +938,7 @@ def storm_control():
 def storm_control_all():
     """ Show storm-control for all interfaces """
 
-    header = ['Interface Name', 'Storm Type', 'Rate (kbps)']
+    header = ['Interface Name', 'Storm Type', 'Rate (kbps)', 'Burst Size(kbits)']
     body = []
 
     config_db = ConfigDBConnector()
@@ -960,7 +960,11 @@ def storm_control_all():
 
         if data:
             kbps = data['kbps']
-            body.append([interface_name, storm_type, kbps])
+            burst = data.get('cbs')
+            if burst is not None:
+                body.append([interface_name, storm_type, kbps, burst])
+            else:
+                body.append([interface_name, storm_type, kbps, 'default'])
 
     click.echo(tabulate(body, header, tablefmt="grid"))
 
@@ -971,7 +975,7 @@ def storm_control_interface(interfacename):
 
     storm_type_list = ['broadcast','unknown-unicast','unknown-multicast']
 
-    header = ['Interface Name', 'Storm Type', 'Rate (kbps)']
+    header = ['Interface Name', 'Storm Type', 'Rate (kbps)', 'Burst Size(kbits)']
     body = []
 
     config_db = ConfigDBConnector()
@@ -990,7 +994,11 @@ def storm_control_interface(interfacename):
 
         if data:
             kbps = data['kbps']
-            body.append([interfacename, storm_type, kbps])
+            burst = data.get('cbs')
+            if burst is not None:
+                body.append([interfacename, storm_type, kbps, burst])
+            else:
+                body.append([interfacename, storm_type, kbps, 'default'])
 
     click.echo(tabulate(body, header, tablefmt="grid"))
 

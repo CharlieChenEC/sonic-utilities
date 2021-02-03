@@ -812,7 +812,7 @@ def storm_control_interface_validate(port_name):
 
     return True
 
-def storm_control_set_entry(port_name, kbps, storm_type):
+def storm_control_set_entry(port_name, kbps, burst_size, storm_type):
     """Set the info of storm control setting into config db
     """
     if storm_control_interface_validate(port_name) is False:
@@ -823,13 +823,48 @@ def storm_control_set_entry(port_name, kbps, storm_type):
     key = port_name + '|' + storm_type
     entry = config_db.get_entry('PORT_STORM_CONTROL', key)
 
+    # Create a new entry
     if len(entry) == 0:
-        config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
+        if burst_size == 0:
+            config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
+        else:
+            config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps, 'cbs': burst_size})
     else:
+        # update an existing entry
         kbps_value = int(entry.get('kbps', 0))
-        click.echo("Existing value of kbps %d" % (kbps_value))
-        if kbps_value != kbps:
-            config_db.mod_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
+        cbs_value = int(entry.get('cbs', 0))
+        click.echo("Existing value of rate: %d kbps" % (kbps_value))
+        click.echo("Existing value of burst size: %d kbits" % (cbs_value))
+
+        # Compare the current setting and the new setting to determine if the entry should be updated
+        #     ----------------------------------------------------------------
+        #     | Current Setting |   New Setting   |          Action          |
+        #     ----------------------------------------------------------------
+        #     | {'kbps'}        | {'kbps', 'cbs'} |Update with new setting   |
+        #     ----------------------------------------------------------------
+        #     | {'kbps'}        | {'kbps'}        |Update with new setting if|
+        #     |                 |                 |'kbps' has changed        |
+        #     ----------------------------------------------------------------
+        #     | {'kbps', 'cbs'} | {'kbps'}        |Update with new setting   |
+        #     ----------------------------------------------------------------
+        #     | {'kbps', 'cbs'} | {'kbps', 'cbs'} |Update with new setting if|
+        #     |                 |                 |'kbps' or 'cbs'has changed|
+        #     ----------------------------------------------------------------
+        #
+        if cbs_value == 0:
+            if cbs_value != burst_size:
+                config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps, 'cbs': burst_size})
+            elif kbps_value != kbps:
+                config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
+            else:
+                click.echo("The configuration is the same as current storm-control setting")
+        else:
+            if burst_size == 0:
+                config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps})
+            elif kbps_value != kbps or cbs_value != burst_size:
+                config_db.set_entry('PORT_STORM_CONTROL', key, {'kbps': kbps, 'cbs': burst_size})
+            else:
+                click.echo("The configuration is the same as current storm-control setting")
 
     return True
 
@@ -4123,11 +4158,12 @@ def broadcast():
 @broadcast.command('add')
 @click.argument('port_name', metavar='<port_name>', required=True)
 @click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('burst_size', metavar='<burst_size>', required=False, default=0, type=click.IntRange(0,134217))
 @click.pass_context
-def add_broadcast_storm(ctx, port_name, kbps):
+def add_broadcast_storm(ctx, port_name, kbps, burst_size):
     click.echo("add broadcast storm-control")
 
-    if storm_control_set_entry(port_name, kbps, 'broadcast') is False:
+    if storm_control_set_entry(port_name, kbps, burst_size, 'broadcast') is False:
         ctx.fail("Unable to add broadcast storm-control")
 
 @broadcast.command('del')
@@ -4147,11 +4183,12 @@ def unknown_unicast():
 @unknown_unicast.command('add')
 @click.argument('port_name', metavar='<port_name>', required=True)
 @click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('burst_size', metavar='<burst_size>', required=False, default=0, type=click.IntRange(0,134217))
 @click.pass_context
-def add_unknown_unicast_storm(ctx, port_name, kbps):
+def add_unknown_unicast_storm(ctx, port_name, kbps, burst_size):
     click.echo("add unknown-unicast storm-control")
 
-    if storm_control_set_entry(port_name, kbps, 'unknown-unicast') is False:
+    if storm_control_set_entry(port_name, kbps, burst_size, 'unknown-unicast') is False:
         ctx.fail("Unable to add unknown-unicast storm-control")
 
 @unknown_unicast.command('del')
@@ -4171,11 +4208,12 @@ def unknown_multicast():
 @unknown_multicast.command('add')
 @click.argument('port_name', metavar='<port_name>', required=True)
 @click.argument('kbps', metavar='<kbps_value>', required=True, type=click.IntRange(0,100000000))
+@click.argument('burst_size', metavar='<burst_size>', required=False, default=0, type=click.IntRange(0,134217))
 @click.pass_context
-def add_unknown_multicast_storm(ctx, port_name, kbps):
+def add_unknown_multicast_storm(ctx, port_name, kbps, burst_size):
     click.echo("add unknown-multicast storm-control")
 
-    if storm_control_set_entry(port_name, kbps, 'unknown-multicast') is False:
+    if storm_control_set_entry(port_name, kbps, burst_size, 'unknown-multicast') is False:
         ctx.fail("Unable to add unknown-multicast storm-control")
 
 @unknown_multicast.command('del')
