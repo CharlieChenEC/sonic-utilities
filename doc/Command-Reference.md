@@ -3826,7 +3826,10 @@ The following shows the trap IDs enabled by default in the trap groups:
   * `genetlink_name`: `psample`
   * `genetlink_mcgrp_name`: `packets`
 
-Note: the trap group `trap.group.vxlanarp` is only created for AS4630-54PE, AS5835-54X, AS5835-54T, AS7326-56X, and AS7726-32X models.
+Note:
+
+* The trap group `default` is created to trap the IPv4/IPv6 packets whose TTL fields in the IP headers are 0 to CPU.
+* The trap group `trap.group.vxlanarp` is only created for AS4630-54PE, AS5835-54X, AS5835-54T, AS7326-56X, and AS7726-32X models.
 
 The following example shows a trap group named `COPP_TABLE:trap.group.nat` includes two NAT related trap IDs (`src_nat_miss` and `dest_nat_miss`) and the meter:
 
