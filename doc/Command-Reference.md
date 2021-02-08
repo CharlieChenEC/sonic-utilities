@@ -3657,7 +3657,7 @@ The following shows schema of CoPP configuration file:
 
   - Parameters:
     - `<trap-group-name>`: trap group name.
-    - `trap_ids`: specify trap ID in the trap group.
+    - `trap_ids`: specify trap ID in the trap group. The supported trap IDs are listed in the below.
     - `trap_action`: specify action for the trap group.
       - `trap`: trap the packets to CPU for process but not forward the packets.
       - `copy`: trap the packets to CPU for process and forward the packets.
@@ -3684,38 +3684,7 @@ The following shows schema of CoPP configuration file:
     - `genetlink_name`: genetlink name. Value "`psample`" is used for sFlow only.
     - `genetlink_mcgrp_name`: genetlink multicast group name. Value "`packets`" is used for sFlow only.
 
-The following example shows a trap group named `COPP_TABLE:trap.group.nat` includes two NAT related trap IDs (`src_nat_miss` and `dest_nat_miss`) and the meter:
-
-- Example:
-  ```
-    {
-        "COPP_TABLE:trap.group.nat": {
-            "trap_ids": "src_nat_miss,dest_nat_miss",
-            "trap_action": "trap",
-            "trap_priority": "1",
-            "queue": "1",
-            "meter_type": "packets",
-            "mode": "sr_tcm",
-            "cir": "600",
-            "cbs": "600",
-            "red_action": "drop"
-        },
-        "OP": "SET"
-    },
-  ```
-
-Users can update CoPP configuration by to update the configuration file, which is `/usr/share/sonic/templates/copp.json.j2` located in swss container, and then reload config to apply new configuration.
-
-- Example:
-  ```
-  admin@sonic:~$ docker exec -it swss bash
-  root@sonic:/# vi /usr/share/sonic/templates/copp.json.j2
-  root@sonic:/# exit
-  exit
-  admin@sonic:~$ config reload -y
-  ```
-
-The following items are the supporting trap IDs:
+The following shows the supported trap IDs:
 
 * `stp`
 * `lacp`
@@ -3747,6 +3716,148 @@ The following items are the supporting trap IDs:
 * `bfdv6`
 * `l3_mtu_error`
 * `ttl_error`
+* `vxlan_arp`
+
+Note: the trap ID `vxlan_arp` is only supported in AS4630-54PE, AS5835-54X, AS5835-54T, AS7326-56X, and AS7726-32X models.
+
+The following shows the trap IDs enabled by default in the trap groups:
+
+* Group `default`
+  * `queue`: 0
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 600
+  * `cbs`: 600
+  * `red_action`: `drop`
+* Group `trap.group.bgp.lacp`
+  * Trap ID
+    * `bgp`
+    * `bgpv6`
+    * `lacp`
+  * `trap_action`: `trap`
+  * `trap_priority`: 4
+  * `queue`: 4
+* Group `trap.group.arp`
+  * Trap ID
+    * `arp_req`
+    * `arp_resp`
+    * `neigh_discovery`
+  * `trap_action`: `copy`
+  * `trap_priority`: 4
+  * `queue`: 4
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 600
+  * `cbs`: 600
+  * `red_action`: `drop`
+* Group `trap.group.suppression`
+  * Trap ID
+    * `arp_suppression`
+    * `nd_suppression`
+  * `trap_action`: `trap`
+  * `trap_priority`: 5
+  * `queue`: 4
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 600
+  * `cbs`: 600
+  * `red_action`: `drop`
+* Group `trap.group.lldp.dhcp.dhcpv6.udld`
+  * Trap ID
+    * `lldp`
+    * `dhcp`
+    * `dhcpv6`
+    * `udld`
+  * `trap_action`: `trap`
+  * `trap_priority`: 4
+  * `queue`: 4
+* Group `trap.group.ip2me`
+  * Trap ID
+    * `ip2me`
+  * `trap_action`: `trap`
+  * `trap_priority`: 1
+  * `queue`: 1
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 6000
+  * `cbs`: 6000
+  * `red_action`: `drop`
+* Group `trap.group.nat`
+  * Trap ID
+    * `src_nat_miss`
+    * `dest_nat_miss`
+  * `trap_action`: `trap`
+  * `trap_priority`: 1
+  * `queue`: 1
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 600
+  * `cbs`: 600
+  * `red_action`: `drop`
+* Group `trap.group.ospf.isis`
+  * Trap ID
+    * `ospf`
+    * `isis`
+  * `trap_action`: `trap`
+  * `trap_priority`: 4
+  * `queue`: 4
+* Group `trap.group.vxlanarp`
+  * Trap ID
+    * `vxlan_arp`
+  * `trap_action`: `copy`
+  * `trap_priority`: 5
+  * `queue`: 4
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 600
+  * `cbs`: 600
+  * `red_action`: `drop`
+* Group `trap.group.sflow`
+  * Trap ID
+    * `sample_packet`
+  * `trap_action`: `trap`
+  * `trap_priority`: 1
+  * `queue`: 2
+  * `meter_type`: `packets`
+  * `mode`: `sr_tcm`
+  * `cir`: 1000
+  * `cbs`: 1000
+  * `red_action`: `drop`
+  * `genetlink_name`: `psample`
+  * `genetlink_mcgrp_name`: `packets`
+
+Note: the trap group `trap.group.vxlanarp` is only created for AS4630-54PE, AS5835-54X, AS5835-54T, AS7326-56X, and AS7726-32X models.
+
+The following example shows a trap group named `COPP_TABLE:trap.group.nat` includes two NAT related trap IDs (`src_nat_miss` and `dest_nat_miss`) and the meter:
+
+- Example:
+  ```
+    {
+        "COPP_TABLE:trap.group.nat": {
+            "trap_ids": "src_nat_miss,dest_nat_miss",
+            "trap_action": "trap",
+            "trap_priority": "1",
+            "queue": "1",
+            "meter_type": "packets",
+            "mode": "sr_tcm",
+            "cir": "600",
+            "cbs": "600",
+            "red_action": "drop"
+        },
+        "OP": "SET"
+    },
+  ```
+
+Users can update CoPP configuration by to update the configuration file, which is `/usr/share/sonic/templates/copp.json.j2` located in swss container, and then reload config to apply new configuration.
+
+- Example:
+  ```
+  admin@sonic:~$ docker exec -it swss bash
+  root@sonic:/# vi /usr/share/sonic/templates/copp.json.j2
+  root@sonic:/# exit
+  exit
+  admin@sonic:~$ config reload -y
+  ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#copp)
 
