@@ -3123,6 +3123,9 @@ def add(ctx, interface_name, ip_addr, gw, secondary):
         interface_name = interface_alias_to_name(interface_name)
         if interface_name is None:
             ctx.fail("'interface_name' is None!")
+    if interface_name.find(VLAN_SUB_INTERFACE_SEPARATOR):
+        if len(interface_name) > 15:
+            ctx.fail("Sub port interface name is too long!")
 
     try:
         ip_network = ipaddress.ip_network(unicode(ip_addr), strict=False)
@@ -3337,6 +3340,9 @@ def bind(ctx, interface_name, vrf_name):
         interface_name = interface_alias_to_name(interface_name)
         if interface_name is None:
             ctx.fail("'interface_name' is None!")
+    if interface_name.find(VLAN_SUB_INTERFACE_SEPARATOR):
+        if len(interface_name) > 15:
+            ctx.fail("Sub port interface name is too long!")
 
     table_name = get_interface_table_name(interface_name)
     if table_name == "":
