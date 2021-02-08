@@ -53,6 +53,11 @@ class portconfig(object):
         if self.verbose:
             print("Setting speed %s on port %s" % (speed, port))
 
+        if sonic_device_util.get_hwsku() == "Accton-AS7326-56X":
+            intf_id = int(re.search("Ethernet(\d+)", port).group(1))
+            if intf_id <= 47:
+                raise Exception("Due to the special circuit scheme on PCB of this device, the port specified in the command is one of the child port out of 4 internally broken out ports. To change port speed on the specified port, you must use \"config interface breakout\" command to change the port speed through specifying the breakout mode. For example, specify port breakout mode \"4x10G\" to change port speed as 10G.")
+
         cur_brkout_dict = self.db.get_table('BREAKOUT_CFG')
         port_tables = self.db.get_table(PORT_TABLE_NAME)
         if cur_brkout_dict and ("parent_port" in port_tables[port]):
