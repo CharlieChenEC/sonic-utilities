@@ -402,6 +402,7 @@ This command displays the full list of show commands available in the software; 
     snmpagentaddress      Show SNMP agent listening IP address configuration
     snmptrap              Show SNMP agent Trap server configuration
     startupconfiguration  Show startup configuration information
+    storm-control         show storm-control configuration
     subinterfaces         Show details of the sub port interfaces
     system-memory         Show memory information
     tacacs                Show TACACS+ configuration
@@ -5600,6 +5601,40 @@ For AS8000 which support PIM hotswap, the extensional fields are "PIM slot" and 
 
 This command is already explained [here](#transceivers)
 
+**show storm-control**
+
+This command displays the threshold rate and burst size for BUM(broadcast/unknown-multicast/unknown-unicast) traffic on the physical interface.
+
+- Usage:
+  ```
+  show storm-control all
+  show storm-control interface [<interface_name>]
+  ```
+
+- Example (all interfaces):
+  ```
+  admin@sonic:~$ show storm-control all
+  +------------------+-------------------+---------------+---------------------+
+  | Interface Name   | Storm Type        |   Rate (kbps) | Burst Size(kbits)   |
+  +==================+===================+===============+=====================+
+  | Ethernet0        | broadcast         |          1000 | 150                 |
+  +------------------+-------------------+---------------+---------------------+
+  | Ethernet1        | unknown-multicast |          1000 | 150                 |
+  +------------------+-------------------+---------------+---------------------+
+  | Ethernet2        | unknown-unicast   |          1000 | 150                 |
+  ... continue
+  ```
+
+- Example (specified interface):
+  ```
+  admin@sonic:~$ show storm-control interface Ethernet1
+  +------------------+-------------------+---------------+---------------------+
+  | Interface Name   | Storm Type        |   Rate (kbps) | Burst Size(kbits)   |
+  +==================+===================+===============+=====================+
+  | Ethernet1        | unknown-multicast |          1000 | 150                 |
+  +------------------+-------------------+---------------+---------------------+
+  ```
+
 ### Interface Config Commands
 This sub-section explains the following list of configuration on the interfaces.
 1) ip - To add or remove IP address for the interface
@@ -5608,6 +5643,7 @@ This sub-section explains the following list of configuration on the interfaces.
 4) speed - to set the interface speed
 5) startup - to bring up the administratively shutdown interface
 6) breakout - to set interface breakout mode
+7) storm-control - to configure storm-control
 
 From 201904 release onwards, the “config interface” command syntax is changed and the format is as follows:
 
@@ -5961,6 +5997,48 @@ kindly use, double tab i.e. <tab><tab> to see the available breakout option cust
   admin@sonic:~$ sudo config interface breakout  Ethernet0 4x25G[10G] -f -l -v -y
   ```
 
+**config interface storm-control**
+
+This command is used to add threshold rate and burst size for BUM traffic or delete the previous setting on the physical interface.
+All types of storm traffic can be configured independently on the interface at the same time.
+
+- Usage:
+  ```
+  config interface storm-control <storm_type> add <interface_name> <rate> [burst size]
+  config interface storm-control <storm_type> del <interface_name>
+  ```
+  - If the optional parameter(burst size) is not specified, 10 times MTU of the interface will be applied as burst size by default.
+
+- Example :
+  ```
+  admin@sonic:~$ sudo config interface storm-control broadcast add Ethernet0 1000
+  add broadcast storm-control
+  admin@sonic:~$ sudo config interface storm-control unknown-multicast add Ethernet0 100000 750
+  add unknown-multicast storm-control
+  admin@sonic:~$ sudo config interface storm-control unknown-unicast add Ethernet0 50000 150
+  add unknown-unicast storm-control
+  admin@sonic:~$ show storm-control all
+  +------------------+-------------------+---------------+---------------------+
+  | Interface Name   | Storm Type        |   Rate (kbps) | Burst Size(kbits)   |
+  +==================+===================+===============+=====================+
+  | Ethernet0        | broadcast         |          1000 | default             |
+  +------------------+-------------------+---------------+---------------------+
+  | Ethernet0        | unknown-multicast |        100000 | 750                 |
+  +------------------+-------------------+---------------+---------------------+
+  | Ethernet0        | unknown-unicast   |         50000 | 150                 |
+  +------------------+-------------------+---------------+---------------------+
+  admin@sonic:~$ sudo config interface storm-control broadcast del Ethernet0
+  del broadcast storm-control
+  admin@sonic:~$ show storm-control all
+  +------------------+-------------------+---------------+---------------------+
+  | Interface Name   | Storm Type        |   Rate (kbps) | Burst Size(kbits)   |
+  +==================+===================+===============+=====================+
+  | Ethernet0        | unknown-multicast |        100000 | 750                 |
+  +------------------+-------------------+---------------+---------------------+
+  | Ethernet0        | unknown-unicast   |         50000 | 150                 |
+  +------------------+-------------------+---------------+---------------------+
+  ```
+
 Go Back To [Beginning of the document](#) or [Beginning of this section](#interfaces)
 
 
@@ -6139,7 +6217,7 @@ This command displays either all the route entries from the routing table or a s
        Known via "connected", distance 0, metric 0, vrf Vrf-red, best
        Last update 21:57:53 ago
        * directly connected, Loopback11
-   ```
+     ```
 
 **show ip interfaces**
 
