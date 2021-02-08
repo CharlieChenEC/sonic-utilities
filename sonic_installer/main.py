@@ -164,8 +164,10 @@ def cli():
         help="Force installation of an image of a type which differs from that of the current running image")
 @click.option('--skip_migration', is_flag=True,
         help="Do not migrate current configuration to the newly installed image")
+@click.option('--skip_account_backup', is_flag=True,
+        help="Do not migrate the account and password information to the newly installed image")
 @click.argument('url')
-def install(url, force, skip_migration=False):
+def install(url, force, skip_migration=False, skip_account_backup=False):
     """ Install image from local binary or URL"""
     bootloader = get_bootloader()
 
@@ -208,6 +210,13 @@ def install(url, force, skip_migration=False):
             click.echo("Skipping configuration migration as requested in the command option.")
         else:
             run_command('config-setup backup')
+
+        # Take a backup of account information
+        if skip_account_backup:
+            click.echo("Skipping account information backup as requested in the command option.")
+        else:
+            click.echo("Taking backup of the account information.")
+            run_command('mkdir -p /host/old_account_info && cp -ar /etc/passwd /etc/shadow /etc/group /etc/gshadow /host/old_account_info/')
 
     # Finally, sync filesystem
     run_command("sync;sync;sync")
