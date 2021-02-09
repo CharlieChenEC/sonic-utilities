@@ -707,6 +707,16 @@ def is_pc_router_interface(config_db, pc):
 
     return False
 
+def interface_has_subport(config_db, interface_name):
+    """Get table keys including subport"""
+
+    data = []
+    keys = config_db.get_keys('VLAN_SUB_INTERFACE')
+    for key in keys:
+        if key[0].split(VLAN_SUB_INTERFACE_SEPARATOR)[0] == interface_name and len(key) == 2:
+            data.append(key)
+    return data
+
 def _get_all_neighbor_ipaddresses(config_db, ignore_local_hosts=False):
     """Returns list of strings containing IP addresses of all BGP neighbors
        if the flag ignore_local_hosts is set to True, additional check to see if
@@ -1607,6 +1617,9 @@ def add_portchannel_member(ctx, portchannel_name, port_name):
         ctx.fail("{} is configured as mirror destination port".format(port_name))
     if is_port_router_interface(db, port_name):
         ctx.fail("{} is a L3 interface!".format(port_name))
+    subport = interface_has_subport(db, port_name)
+    if len(subport):
+        ctx.fail("{} is a subport interface".format(subport[0][0]))
     db.set_entry('PORTCHANNEL_MEMBER', (portchannel_name, port_name),
             {'NULL': 'NULL'})
 
@@ -2133,6 +2146,10 @@ def add_vlan(ctx, vid, pvlan_type):
         vlan = 'Vlan{}'.format(vid)
         if len(db.get_entry('VLAN', vlan)) != 0:
             ctx.fail("{} already exists".format(vlan))
+        keys = db.get_keys('VLAN_SUB_INTERFACE')
+        for key in keys:
+            if isinstance(key, tuple) and key[0].split(VLAN_SUB_INTERFACE_SEPARATOR)[1] == str(vid):
+                ctx.fail("{} already created by subport".format(vlan))
         vlan_entry = {'vlanid': vid}
         if pvlan_type:
             vlan_entry['private_type'] = pvlan_type
@@ -3142,6 +3159,23 @@ def add(ctx, interface_name, ip_addr, gw, secondary):
 
         if not ip_network.is_link_local and is_ipaddress_overlapped(interface_name, ip_addr):
             ctx.fail("IP address {} overlaps with existing subnet".format(ip_addr))
+
+        if table_name == "VLAN_SUB_INTERFACE":
+            parentAlias = interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[0]
+            interface_ipaddr = interface_ipaddr_dependent_on_interface(config_db, parentAlias)
+            if len(interface_ipaddr):
+                ctx.fail("{} is a L3 interface!".format(parentAlias))
+            vlan_name = 'Vlan{}'.format(interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[1])
+            if len(config_db.get_entry('VLAN', vlan_name)) != 0:
+                ctx.fail("{} already exist".format(vlan_name))
+            portchannel_member_table = config_db.get_table('PORTCHANNEL_MEMBER')
+            if interface_is_in_portchannel(portchannel_member_table, parentAlias):
+                ctx.fail("{} is portchannel member".format(parentAlias))
+        else:
+            subport = interface_has_subport(config_db, interface_name)
+            if len(subport):
+                ctx.fail("{} is a subport interface!".format(subport[0][0]))
+
         interface_entry = config_db.get_entry(table_name, interface_name)
         if len(interface_entry) == 0:
             if table_name == "VLAN_SUB_INTERFACE":
