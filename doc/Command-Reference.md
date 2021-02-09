@@ -5357,6 +5357,11 @@ The "current-mode" subcommand is used to display current breakout mode for all i
   | Ethernet0   | 4x25G[10G]              |
   +-------------+-------------------------+
   ```
+- NOTE:
+  - <a name="breakout_mode">breakout_mode: number x speed1 [speed2, speed3]
+    - The parent port lanes are split up equally to the number of ports denoted by "number". The speed for each breakout port is default to speed1, and is changeable to speed2, speed3 etc.
+    - For example: 4x25G[10G] on a QSFP port means, all lanes(i.e. 4 lanes) are equally assigned to four breakout ports(i.e. each port has one lane), and the port speed is 25G by default, and the speed could be changed to 10G later.
+    </a>
 
 **show interfaces counters**
 
@@ -5913,6 +5918,8 @@ This command is used for administratively bringing up the Physical interface or 
   ```
 
 **config interface speed <interface_name> (Versions >= 201904)**
+This command is used to configure the speed for the Physical interface.
+The supported speed list can be changed by breakout-mode. Users can use "show interfaces breakout" to get the current breakout-mode and the supported speeds.
 
 **config interface <interface_name> speed (Versions <= 201811)**
 
@@ -5940,6 +5947,10 @@ Dynamic breakout feature is yet to be supported in SONiC and hence uses cannot c
   admin@sonic:~$ sudo config interface Ethernet63 speed 40000
 
   ```
+
+- NOTE:
+  - [breakout mode](#breakout_mode)
+
 
 **config interface transceiver lpmode**
 
@@ -6024,6 +6035,10 @@ kindly use, double tab i.e. <tab><tab> to see the available breakout option cust
   admin@sonic:~$ sudo config interface breakout  Ethernet0 4x25G[10G] -f -l -v -y
   ```
 
+- NOTE:
+  - [breakout mode](#breakout_mode)
+
+
 **config interface storm-control**
 
 This command is used to add threshold rate and burst size for BUM traffic or delete the previous setting on the physical interface.
@@ -6097,7 +6112,6 @@ This command is used to enable or disable advertised-all-speeds for an interface
   ```
   admin@sonic:~$ sudo config interface adv-all-speeds Ethernet0 enabled
   ```
-
 Go Back To [Beginning of the document](#) or [Beginning of this section](#interfaces)
 
 
