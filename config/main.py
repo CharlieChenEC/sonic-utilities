@@ -617,6 +617,7 @@ def is_ipaddress_overlapped(ctx, interface_name, ip_addr):
     interface_dict.update(config_db.get_table('PORTCHANNEL_INTERFACE'))
     interface_dict.update(config_db.get_table('VLAN_INTERFACE'))
     interface_dict.update(config_db.get_table('LOOPBACK_INTERFACE'))
+    interface_dict.update(config_db.get_table('VLAN_SUB_INTERFACE'))
     ip_network = ipaddress.ip_network(unicode(ip_addr), strict=False)
 
     for key in interface_dict.keys():
