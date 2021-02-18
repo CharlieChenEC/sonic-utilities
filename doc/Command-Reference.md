@@ -6007,7 +6007,11 @@ All types of storm traffic can be configured independently on the interface at t
   config interface storm-control <storm_type> add <interface_name> <rate> [burst size]
   config interface storm-control <storm_type> del <interface_name>
   ```
-  - If the optional parameter(burst size) is not specified, 10 times MTU of the interface will be applied as burst size by default.
+  Note
+  - The range of rate is 0 ~ 100,000,000 kbps(100Gbps).
+  - The range of burst size is 0 ~ 134217 kbits.  
+    The burst size is an optional parameter.If it is assigned to 0 or not specified, 10 times MTU of the interface will be applied as burst size by default.  
+    **CAUTION: The system will crash while the default burst size is not applied an appropriate value.**
 
 - Example :
   ```
