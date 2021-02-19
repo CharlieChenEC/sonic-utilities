@@ -10934,8 +10934,18 @@ This command is used to install a new image on the alternate image partition.  T
 
 - Usage:
   ```
-  sonic_installer install <image_file_path>
+  sonic_installer install [OPTIONS] <image_file_path>
+
+  Options:
+      -y, --yes
+      -f, --force          Force installation of an image of a type which differs from that of the current running image
+      --skip_migration     Do not migrate current configuration to the newly installed image
+      --skip_account_info  Do not migrate the account and password information to the newly installed image
+      --help               Show this message and exit.
   ```
+
+By default, the current configuration and account information will be migrated to the newly installed image.  
+The options "--skip_migration" and "--skip_account_info" can be applied to omit the migration of configuration and account information respectively.
 
 - Example:
   ```
