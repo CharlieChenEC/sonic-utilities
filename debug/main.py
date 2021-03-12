@@ -24,6 +24,12 @@ def cli():
     """SONiC command line - 'debug' command"""
     pass
 
+#
+# STP
+#
+from .stp import spanning_tree
+cli.add_command(spanning_tree)
+
 
 p = subprocess.check_output(["sudo vtysh -c 'show version'"], shell=True)
 if 'FRRouting' in p:

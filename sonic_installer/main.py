@@ -327,7 +327,7 @@ def cleanup():
 @click.option('--tag', type=str, help="Tag for the new docker image")
 @click.option('--warm', is_flag=True, help="Perform warm upgrade")
 @click.argument('container_name', metavar='<container_name>', required=True,
-    type=click.Choice(["swss", "snmp", "lldp", "bgp", "pmon", "dhcp_relay", "telemetry", "teamd", "radv", "amon", "sflow"]))
+    type=click.Choice(["swss", "snmp", "lldp", "bgp", "pmon", "dhcp_relay", "telemetry", "teamd", "radv", "amon", "sflow", "stp"]))
 @click.argument('url')
 def upgrade_docker(container_name, url, cleanup_image, skip_check, tag, warm):
     """ Upgrade docker image from local binary or URL"""

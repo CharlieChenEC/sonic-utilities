@@ -125,6 +125,11 @@ def cli():
     """SONiC command line - 'Clear' command"""
     pass
 
+#
+# 'STP'
+#
+from .stp import spanning_tree
+cli.add_command(spanning_tree)
 
 #
 # 'ip' group ###

@@ -23,6 +23,7 @@ from portconfig import get_child_ports, get_port_config_file_name
 import aaa
 import mlnx
 import nat
+import stp
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help', '-?'])
 
@@ -992,7 +993,8 @@ def _stop_services():
         'pmon',
         'bgp',
         'hostcfgd',
-        'nat'
+        'nat',
+        'stp'
     ]
 
     if asic_type == 'mellanox' and 'pmon' in services_to_stop:
@@ -1020,7 +1022,8 @@ def _reset_failed_services():
         'nat',
         'sflow',
         'restapi',
-        'mgmt-framework'
+        'mgmt-framework',
+        'stp'
     ]
 
     execute_systemctl(services_to_reset, SYSTEMCTL_ACTION_RESET_FAILED)
@@ -1041,7 +1044,8 @@ def _restart_services():
         'nat',
         'sflow',
         'restapi',
-        'mgmt-framework'
+        'mgmt-framework',
+        'stp'
     ]
 
     disable_services = _get_disabled_services_list()
@@ -1179,6 +1183,7 @@ config.add_command(aaa.tacacs)
 config.add_command(aaa.ldap)
 # === Add NAT Configuration ==========
 config.add_command(nat.nat)
+config.add_command(stp.spanning_tree)
 
 @config.command()
 @click.option('-y', '--yes', is_flag=True, callback=_abort_if_false,
@@ -2155,6 +2160,9 @@ def add_vlan(ctx, vid, pvlan_type):
         if pvlan_type:
             vlan_entry['private_type'] = pvlan_type
         db.set_entry('VLAN', vlan, vlan_entry)
+        # Enable STP on VLAN if PVST is enabled globally
+        if stp.is_global_stp_enabled(ctx):
+            stp.vlan_enable_stp(ctx, vlan)
     else :
         ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
 
@@ -2176,6 +2184,12 @@ def del_vlan(ctx, vid):
     for k in keys:
         db.set_entry('VLAN_MEMBER', k, None)
     db.set_entry('VLAN', vlan_name, None)
+    # Delete STP_VLAN & STP_VLAN_PORT entries when VLAN is deleted.
+    db.set_entry('STP_VLAN', 'Vlan{}'.format(vid), None)
+    stp_intf_list = stp.get_intf_list_from_stp_vlan_intf_table(db, 'Vlan{}'.format(vid))
+    for intf_name in stp_intf_list:
+        key = 'Vlan{}'.format(vid) + "|" + intf_name
+        db.set_entry('STP_VLAN_PORT', key, None)
 
 
 #
@@ -2226,6 +2240,12 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
        (not is_port and is_pc_router_interface(db, interface_name)):
         ctx.fail("{} is a L3 interface!".format(interface_name))
 
+    # If port is being made L2 port, enable STP
+    if stp.is_global_stp_enabled(ctx) is True:
+        vlan_list_for_intf = stp.get_vlan_list_for_interface(db, interface_name)
+        if len(vlan_list_for_intf) == 0:
+            stp.interface_enable_stp(ctx, interface_name)
+
     db.set_entry('VLAN_MEMBER', (vlan_name, interface_name), {'tagging_mode': "untagged" if untagged else "tagged" })
 
 @vlan_member.command('del')
@@ -2253,6 +2273,13 @@ def del_vlan_member(ctx, vid, interface_name):
         ctx.fail("{} is not a member of {}".format(interface_name, vlan_name))
 
     db.set_entry('VLAN_MEMBER', (vlan_name, interface_name), None)
+    # If port is being made non-L2 port, disable STP
+    if stp.is_global_stp_enabled(ctx) is True:
+        vlan_interface = str(vlan_name) + "|" + interface_name
+        db.set_entry('STP_VLAN_PORT', vlan_interface, None)
+        vlan_list_for_intf = stp.get_vlan_list_for_interface(db, interface_name)
+        if len(vlan_list_for_intf) == 0:
+            db.set_entry('STP_PORT', interface_name, None)
 
 #
 # 'pvlan' group ('config pvlan ...')
