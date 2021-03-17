@@ -689,7 +689,7 @@ def check_if_stp_enabled_for_interface(ctx, intf_name):
 def check_if_interface_is_valid(ctx, interface_name):
     from main import interface_name_is_valid
     db = ctx.obj['db']
-    if interface_name_is_valid(db, interface_name) is False:
+    if interface_name_is_valid(interface_name) is False:
         ctx.fail("Interface name is invalid. Please enter a valid interface name!!")
     for k, v in db.get_table('INTERFACE').iteritems():
         if k == interface_name:
