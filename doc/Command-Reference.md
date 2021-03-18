@@ -7019,6 +7019,13 @@ This command modifies the SNMP trap server IP address to which the SNMP agent is
   config snmptrap modify <snmp_version> [-p <port_num>] [-v <vrf_name>] [-c <community>] trapserverip
   ```
 
+- Parameters:
+  - snmp_version: SNMP Version. (Supported 1 and 2)
+  - port_num: SNMP Trap Server port, default is 162.
+  - vrf_name: VRF Name. (Supported mgmt/DataVrfName/None)
+  - community: Community.
+  - trapserverip: Trap Server ip.
+
 - Example:
   ```
    admin@sonic:~$ sudo config snmptrap modify 2 -p 456 -v mgmt 21.21.21.21
@@ -7031,17 +7038,19 @@ This command modifies the SNMP trap server IP address to which the SNMP agent is
 
 **config snmptrap del**
 
-This command deletes the SNMP Trap server IP address to which SNMP agent is expected to send TRAPs. When users had added the trap server IP as part of "mgmt" VRF, users should specify the optional vrf_name parameter as "mgmt" while deleting as well. This configuration is removed from snmpd.conf that is used by SNMP agent. SNMP service is restarted to make this configuration effective in SNMP agent.
+This command deletes the specified SNMP version of SNMP Trap server configuration.This configuration is removed from snmpd.conf that is used by SNMP agent. SNMP service is restarted to make this configuration effective in SNMP agent.
 
 - Usage:
   ```
-  config snmptrap del [-p <port_num>] [-v <vrf_name>] [-c <community>] trapserverip
+  config snmptrap del <snmp_version>
   ```
+
+- Parameters:
+  - snmp_version: SNMP Version. (Supported 1 and 2)
 
 - Example:
   ```
-   admin@sonic:~$ sudo config snmptrap del -v mgmt -p 123 21.22.13.14
-
+   admin@sonic:~$ sudo config snmptrap del 2
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#management-vrf)
