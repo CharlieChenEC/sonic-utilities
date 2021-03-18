@@ -2413,7 +2413,7 @@ def snmptrap(ctx):
     ctx.obj = {'db': config_db}
 
 @snmptrap.command('modify')
-@click.argument('ver', metavar='<SNMP Version>', type=click.Choice(['1', '2', '3']), required=True)
+@click.argument('ver', metavar='<SNMP Version>', type=click.Choice(['1', '2']), required=True)
 @click.argument('serverip', metavar='<SNMP TRAP SERVER IP Address>', required=True)
 @click.option('-p', '--port', help="SNMP Trap Server port, default 162", default="162")
 @click.option('-v', '--vrf', help="VRF Name mgmt/DataVrfName/None", default="None")
@@ -2429,14 +2429,15 @@ def modify_snmptrap_server(ctx, ver, serverip, port, vrf, comm):
         config_db.mod_entry('SNMP_TRAP_CONFIG',"v1TrapDest",{"DestIp": serverip, "DestPort": port, "vrf": vrf, "Community": comm})
     elif ver == "2":
         config_db.mod_entry('SNMP_TRAP_CONFIG',"v2TrapDest",{"DestIp": serverip, "DestPort": port, "vrf": vrf, "Community": comm})
-    else:
-        config_db.mod_entry('SNMP_TRAP_CONFIG',"v3TrapDest",{"DestIp": serverip, "DestPort": port, "vrf": vrf, "Community": comm})
+
+    cmd="systemctl reset-failed snmp"
+    os.system (cmd)
 
     cmd="systemctl restart snmp"
     os.system (cmd)
 
 @snmptrap.command('del')
-@click.argument('ver', metavar='<SNMP Version>', type=click.Choice(['1', '2', '3']), required=True)
+@click.argument('ver', metavar='<SNMP Version>', type=click.Choice(['1', '2']), required=True)
 @click.pass_context
 def delete_snmptrap_server(ctx, ver):
     """Delete the SNMP Trap server configuration"""
@@ -2446,8 +2447,10 @@ def delete_snmptrap_server(ctx, ver):
         config_db.mod_entry('SNMP_TRAP_CONFIG',"v1TrapDest",None)
     elif ver == "2":
         config_db.mod_entry('SNMP_TRAP_CONFIG',"v2TrapDest",None)
-    else:
-        config_db.mod_entry('SNMP_TRAP_CONFIG',"v3TrapDest",None)
+
+    cmd="systemctl reset-failed snmp"
+    os.system (cmd)
+
     cmd="systemctl restart snmp"
     os.system (cmd)
 
