@@ -89,6 +89,27 @@ class TestSubport(object):
         assert self.get_err_str(result.output) == 'Sub port interface name is too long!'
 
     @patch('config.main.run_command')
+    def test_subport_validate_vlan_id(self, mock_run, basic_suite):
+        (config, show, db) = basic_suite
+        ctx_obj = {'config_db': db['config_db']}
+
+        intf_name = "Ethernet0.0"
+        ip_addr = "192.169.1.1/24"
+        result = self.runner.invoke(config.config.commands['interface'].commands['ip'].commands['add'], [intf_name, ip_addr], obj=ctx_obj)
+        assert result.exit_code != 0
+        assert self.get_err_str(result.output) == 'Invalid VLAN ID {} (1-4094)'.format(intf_name.split('.')[1])
+
+        intf_name = "Ethernet0.4095"
+        result = self.runner.invoke(config.config.commands['interface'].commands['ip'].commands['add'], [intf_name, ip_addr], obj=ctx_obj)
+        assert result.exit_code != 0
+        assert self.get_err_str(result.output) == 'Invalid VLAN ID {} (1-4094)'.format(intf_name.split('.')[1])
+
+        intf_name = "Ethernet0.abc"
+        result = self.runner.invoke(config.config.commands['interface'].commands['ip'].commands['add'], [intf_name, ip_addr], obj=ctx_obj)
+        assert result.exit_code != 0
+        assert self.get_err_str(result.output) == 'Invalid VLAN ID {} (1-4094)'.format(intf_name.split('.')[1])
+
+    @patch('config.main.run_command')
     @pytest.mark.parametrize("oper, test_args, expect_result, err_args", [
         ("add", ["Ethernet0", "192.169.1.1/24"], "pass", ""),
         ("add", ["Ethernet0.10", "192.169.2.1/24"], "fail", ["Ethernet0","L3"]),

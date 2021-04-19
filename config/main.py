@@ -3183,7 +3183,10 @@ def add(ctx, interface_name, ip_addr, gw, secondary):
             interface_ipaddr = interface_ipaddr_dependent_on_interface(config_db, parentAlias)
             if len(interface_ipaddr):
                 ctx.fail("{} is a L3 interface!".format(parentAlias))
-            vlan_name = 'Vlan{}'.format(interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[1])
+            vid = interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[1]
+            if not vid.isdigit() or not vlan_id_is_valid(int(vid)):
+                ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
+            vlan_name = 'Vlan{}'.format(vid)
             if len(config_db.get_entry('VLAN', vlan_name)) != 0:
                 ctx.fail("{} already exist".format(vlan_name))
             portchannel_member_table = config_db.get_table('PORTCHANNEL_MEMBER')
