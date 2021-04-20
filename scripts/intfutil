@@ -158,7 +158,14 @@ def appl_db_port_status_get(appl_db, intf_name, status_type):
     if status is None:
         return "N/A"
     if status_type == PORT_SPEED and status != "N/A":
-       status = '{}G'.format(status[:-3])
+        if (len(status) < len('1000')):
+            status += 'M'
+        else:
+            if (status.rpartition('000')[1] != '000'):
+                status = status[:-3] + '.' + status[-3:]
+                status = status.rstrip('0') + 'G'
+            else:
+                status = '{}G'.format(status[:-3])
     return status
 
 
@@ -283,7 +290,14 @@ def po_speed_dict(po_int_dict, appl_db):
             po_list.append(key)
             if len(value) == 1:
                 interface_speed = appl_db.get(appl_db.APPL_DB, "PORT_TABLE:" + value[0], "speed")
-                interface_speed = '{}G'.format(interface_speed[:-3])
+                if (len(interface_speed) < len('1000')):
+                    interface_speed += 'M'
+                else:
+                    if (interface_speed.rpartition('000')[1] != '000'):
+                        interface_speed = interface_speed[:-3] + '.' + interface_speed[-3:]
+                        interface_speed = interface_speed.rstrip('0') + 'G'
+                    else:
+                        interface_speed = '{}G'.format(interface_speed[:-3])
                 po_list.append(interface_speed)
             elif len(value) > 1:
                 for intf in value:
@@ -292,7 +306,14 @@ def po_speed_dict(po_int_dict, appl_db):
                     agg_speed_list.append(temp_speed)
                     interface_speed = sum(agg_speed_list)
                     interface_speed = str(interface_speed)
-                    interface_speed = '{}G'.format(interface_speed[:-3])
+                    if (len(interface_speed) < len('1000')):
+                        interface_speed += 'M'
+                    else:
+                        if (interface_speed.rpartition('000')[1] != '000'):
+                            interface_speed = interface_speed[:-3] + '.' + interface_speed[-3:]
+                            interface_speed = interface_speed.rstrip('0') + 'G'
+                        else:
+                            interface_speed = '{}G'.format(interface_speed[:-3])
                 po_list.append(interface_speed)
             po_speed_dict = dict(po_list[i:i+2] for i in range(0, len(po_list), 2))
         return po_speed_dict
