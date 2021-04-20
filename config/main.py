@@ -1617,6 +1617,8 @@ def add_portchannel_member(ctx, portchannel_name, port_name):
         ctx.fail("{} is configured as mirror destination port".format(port_name))
     if is_port_router_interface(db, port_name):
         ctx.fail("{} is a L3 interface!".format(port_name))
+    if VLAN_SUB_INTERFACE_SEPARATOR in port_name or not port_name.startswith("Ethernet"):
+        ctx.fail("{} is not valid.".format(port_name))
     subport = interface_has_subport(db, port_name)
     if len(subport):
         ctx.fail("{} is a subport interface".format(subport[0][0]))

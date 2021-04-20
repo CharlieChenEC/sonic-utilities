@@ -219,6 +219,16 @@ class TestSubport(object):
             else:
                 assert self.get_err_str(result.output) == 'Vlan{} already created by subport'.format(test_args[0])
 
+    def test_subport_can_not_as_member_of_pc(self, basic_suite):
+        (config, show, db) = basic_suite
+        ctx_obj = {'db': db['config_db']}
+
+        portchannel_name = "PortChannel0001"
+        port_name = "Ethernet0.10"
+        result = self.runner.invoke(config.config.commands['portchannel'].commands['member'].commands['add'], [portchannel_name, port_name], obj=ctx_obj)
+        assert result.exit_code != 0
+        assert self.get_err_str(result.output) == '{} is not valid.'.format(port_name)
+
     @classmethod
     def teardown_class(cls):
         # print("TEARDOWN")
