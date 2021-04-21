@@ -123,6 +123,9 @@
 * [Startup & Running Configuration](#startup--running-configuration)
   * [Startup Configuration](#startup-configuration)
   * [Running Configuration](#running-configuration)
+* [Subport](#subport)
+  * [Subport Show commands](#subport-show-commands)
+  * [Subport Config commands](#subport-config-commands)
 * [Syslog](#syslog)
   * [Syslog config commands](#syslog-config-commands)
 * [System State](#system-state)
@@ -9642,6 +9645,68 @@ This command displays the running configuration of the snmp module.
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#Startup--Running-Configuration)
 
+## Subport
+
+### Subport Show commands
+
+**show subinterfaces status**
+
+This command display the Subport configuration and status.
+
+- Usage:
+  ```
+  show subinterfaces status
+  ```
+
+- Example:
+  ```
+  admin@sonic:~#show subinterfaces status
+    Sub port interface    Speed    MTU    Vlan    Admin                  Type
+  --------------------  -------  -----  ------  -------  --------------------
+           Ethernet4.1     100G   9100       1       up  802.1q-encapsulation
+        Ethernet4.4094     100G   9100    4094       up  802.1q-encapsulation
+  ```
+
+### Subport Config commands
+
+**config interface ip add/remove <sub_port_interface_name> <ip_addr>**
+
+Configuring IP address on subport is the same as [config interface ip add/remove command](#interface-config-commands).
+This command will automatically add (or remove) subport interface if the subport interface does not exist (or already existed).
+The VLAN ID in subport interface name specifies the 802.1q Vlan tagging. The ingress and egress packets of subport interface should be tagged with the VLAN ID. For example, for sub port interface Ethernet4.20, Vlan 20 is used for 802.1q Vlan tagging.
+
+- Usage:
+  ```
+  config interface ip {add|remove} <sub_port_interface_name> <ip_addr>
+  ```
+
+  - Parameters:
+    - sub_port_interface_name: specify subport to add (or remove) subport interface
+
+- Example:
+  ```
+  admin@sonic:~# sudo config interface ip add Ethernet4.20 192.169.1.1/24
+  admin@sonic:~# sudo config interface ip remove Ethernet4.20 192.169.1.1/24
+  ```
+
+**config interface startup/shutdown <sub_port_interface_name>**
+
+Change admin status on a subport is the same as [config interface startup/shutdown command](#interface-config-commands).
+
+- Usage:
+  ```
+  config interface {startup|shutdown} <sub_port_interface_name>
+  ```
+
+- Example:
+  ```
+  admin@sonic:~# sudo config interface startup Ethernet4.20
+  admin@sonic:~# sudo config interface shutdown Ethernet4.20
+  admin@sonic:~# sudo config interface startup PortChannel1.20
+  admin@sonic:~# sudo config interface shutdown PortChannel1.20
+  ```
+
+Go Back To [Beginning of the document](#) or [Beginning of this section](#subport)
 
 ## Syslog
 
