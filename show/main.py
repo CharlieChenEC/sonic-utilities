@@ -2690,34 +2690,31 @@ def config(redis_unix_socket_path):
     keys = list(data.keys())
     member_data = config_db.get_table('VLAN_MEMBER')
 
+    def get_iface_name_for_display(member):
+        name_for_display = member
+        if get_interface_mode() == "alias" and member:
+            name_for_display = iface_alias_converter.name_to_alias(member)
+        return name_for_display
+
+    def get_tagging_mode(vlan, member):
+        if not member:
+            return ''
+        tagging_mode = config_db.get_entry('VLAN_MEMBER', (vlan, member)).get('tagging_mode')
+        return '?' if tagging_mode is None else tagging_mode
+
     def tablelize(keys, data):
         table = []
 
         for k in natsorted(keys):
-            # members = set(data[k].get('members', []))
-            members = set()
-            for (vlan, interface_name) in member_data:
-                if vlan == k:
-                    members.add(interface_name)
+            members = set([(vlan, member) for vlan, member in member_data if vlan == k])
+            # vlan with no members
+            if not members:
+                members = [(k, '')]
 
-            for m in natsorted(list(members)):
-                r = []
-                r.append(k)
-                r.append(data[k]['vlanid'])
-                if get_interface_mode() == "alias":
-                    alias = iface_alias_converter.name_to_alias(m)
-                    r.append(alias)
-                else:
-                    r.append(m)
+            for vlan, member in natsorted(members):
+                r = [vlan, data[vlan]['vlanid'], get_iface_name_for_display(member), get_tagging_mode(vlan, member)]
 
-                entry = config_db.get_entry('VLAN_MEMBER', (k, m))
-                mode = entry.get('tagging_mode')
-                if mode is None:
-                    r.append('?')
-                else:
-                    r.append(mode)
-
-                table.append(r)
+            table.append(r)
 
         return table
 
