@@ -3182,9 +3182,10 @@ def add(ctx, interface_name, ip_addr, gw, secondary):
 
         if table_name == "VLAN_SUB_INTERFACE":
             parentAlias = interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[0]
-            interface_ipaddr = interface_ipaddr_dependent_on_interface(config_db, parentAlias)
-            if len(interface_ipaddr):
-                ctx.fail("{} is a L3 interface!".format(parentAlias))
+            keys = config_db.get_keys(get_interface_table_name(parentAlias))
+            for key in keys:
+                if parentAlias == key:
+                    ctx.fail("{} is a L3 interface!".format(parentAlias))
             vid = interface_name.split(VLAN_SUB_INTERFACE_SEPARATOR)[1]
             if not vid.isdigit() or not vlan_id_is_valid(int(vid)):
                 ctx.fail("Invalid VLAN ID {} (1-4094)".format(vid))
