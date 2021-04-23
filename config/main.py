@@ -13,6 +13,7 @@ import json
 
 import sonic_device_util
 import ipaddress
+import ipaddr
 from swsssdk import ConfigDBConnector, SonicV2Connector, SonicDBConfig
 from minigraph import parse_device_desc_xml
 from config_mgmt import ConfigMgmtDPB
@@ -3597,41 +3598,90 @@ def add_route(ctx, command_str):
             prefix_str = command_str[:i]
             nexthop_str = command_str[i:]
     vrf_name = ""
-    cmd = 'sudo vtysh -c "configure terminal" -c "ip route'
-    if prefix_str:
-        if len(prefix_str) == 2:
-            prefix_mask = prefix_str[1]
-            cmd += ' {}'.format(prefix_mask)
-        elif len(prefix_str) == 4:
-            vrf_name = prefix_str[2]
-            prefix_mask = prefix_str[3]
-            cmd += ' {}'.format(prefix_mask)
-        else:
-            ctx.fail("prefix is not in pattern!")
-    if nexthop_str:
-        if len(nexthop_str) == 2:
-            ip = nexthop_str[1]
-            if vrf_name == "":
-                cmd += ' {}'.format(ip)
-            else:
-                cmd += ' {} vrf {}'.format(ip, vrf_name)
-        elif len(nexthop_str) == 3:
-            dev_name = nexthop_str[2]
-            if vrf_name == "":
-                cmd += ' {}'.format(dev_name)
-            else:
-                cmd += ' {} vrf {}'.format(dev_name, vrf_name)
-        elif len(nexthop_str) == 4:
-            vrf_name_dst = nexthop_str[2]
-            ip = nexthop_str[3]
-            if vrf_name == "":
-                cmd += ' {} nexthop-vrf {}'.format(ip, vrf_name_dst)
-            else:
-                cmd += ' {} vrf {} nexthop-vrf {}'.format(ip, vrf_name, vrf_name_dst)
-        else:
-            ctx.fail("nexthop is not in pattern!")
-    cmd += '"'
-    run_command(cmd)
+    if len(prefix_str) == 2:
+        prefix_mask = prefix_str[1]
+    elif len(prefix_str) == 4:
+        if prefix_str[1] != "vrf":
+            ctx.fail("Unrecognized command")
+
+        vrf_name = prefix_str[2]
+        prefix_mask = prefix_str[3]
+    else:
+        ctx.fail("prefix is not in pattern!")
+
+    try:
+        network_obj = ipaddr.IPNetwork(prefix_mask).masked()
+    except:
+        click.echo("Invalid prefix {}".format(prefix_mask))
+        ctx.exit(2)
+
+    key = str(network_obj) if vrf_name == "" else str(network_obj) + "@" + vrf_name
+
+    CFG_ROUTE_TABLE = "ROUTE"
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+
+    entry = config_db.get_entry(CFG_ROUTE_TABLE, key)
+    if not entry:
+        entry = {
+            "nexthop": "",
+            "ifname": ""
+        }
+
+    if len(nexthop_str) == 2:
+        ip = nexthop_str[1]
+
+        if not is_ipaddress(ip):
+            # ctx.fail("Invalid nexthop {}".format(ip))
+            click.echo("Invalid nexthop {}".format(ip))
+            ctx.exit(2)
+
+        if ip not in entry.get("nexthop", "").split(","):
+            val = filter(len, entry.get("nexthop").split(","))
+            val.append(ip)
+            entry["nexthop"] = ",".join(val)
+
+            val = filter(len, entry.get("ifname").split(","))
+            val.append("NULL")
+            entry["ifname"] = ",".join(val)
+    elif len(nexthop_str) == 3:
+        if nexthop_str[1] != "dev":
+            ctx.fail("Unrecognized command")
+
+        dev_name = nexthop_str[2]
+        if dev_name not in entry.get("ifname", "").split(","):
+            val = filter(len, entry.get("nexthop").split(","))
+            val.append("0.0.0.0")
+            entry["nexthop"] = ",".join(val)
+
+            val = filter(len, entry.get("ifname").split(","))
+            val.append(dev_name)
+            entry["ifname"] = ",".join(val)
+    elif len(nexthop_str) == 4:
+        if nexthop_str[1] != "vrf":
+            ctx.fail("Unrecognized command")
+
+        vrf_name_dst = nexthop_str[2]
+        ip = nexthop_str[3]
+
+        if not is_ipaddress(ip):
+            # ctx.fail("Invalid nexthop {}".format(ip))
+            click.echo("Invalid nexthop {}".format(ip))
+            ctx.exit(2)
+
+        if ip + "@" + vrf_name_dst not in entry.get("nexthop", "").split(","):
+            val = filter(len, entry.get("nexthop").split(","))
+            val.append(ip + "@" + vrf_name_dst)
+            entry["nexthop"] = ",".join(val)
+
+            val = filter(len, entry.get("ifname").split(","))
+            val.append("NULL")
+            entry["ifname"] = ",".join(val)
+    else:
+        ctx.fail("nexthop is not in pattern!")
+
+    config_db.set_entry(CFG_ROUTE_TABLE, key, entry)
 
 @route.command('del',context_settings={"ignore_unknown_options":True})
 @click.argument('command_str', metavar='prefix [vrf <vrf_name>] <A.B.C.D/M> nexthop <[vrf <vrf_name>] <A.B.C.D>>|<dev <dev_name>>', nargs=-1, type=click.Path())
@@ -3649,41 +3699,92 @@ def del_route(ctx, command_str):
             prefix_str = command_str[:i]
             nexthop_str = command_str[i:]
     vrf_name = ""
-    cmd = 'sudo vtysh -c "configure terminal" -c "no ip route'
-    if prefix_str:
-        if len(prefix_str) == 2:
-            prefix_mask = prefix_str[1]
-            cmd += ' {}'.format(prefix_mask)
-        elif len(prefix_str) == 4:
-            vrf_name = prefix_str[2]
-            prefix_mask = prefix_str[3]
-            cmd += ' {}'.format(prefix_mask)
-        else:
-            ctx.fail("prefix is not in pattern!")
-    if nexthop_str:
+    if len(prefix_str) == 2:
+        prefix_mask = prefix_str[1]
+    elif len(prefix_str) == 4:
+        if prefix_str[1] != "vrf":
+            ctx.fail("Unrecognized command")
+
+        vrf_name = prefix_str[2]
+        prefix_mask = prefix_str[3]
+    else:
+        ctx.fail("prefix is not in pattern!")
+
+    try:
+        network_obj = ipaddr.IPNetwork(prefix_mask).masked()
+    except:
+        # ctx.fail("Invalid prefix {}".format(prefix_mask))
+        click.echo("Invalid prefix {}".format(prefix_mask))
+        ctx.exit(2)
+
+    key = str(network_obj) if vrf_name == "" else str(network_obj) + "@" + vrf_name
+
+    CFG_ROUTE_TABLE = "ROUTE"
+
+    config_db = ConfigDBConnector()
+    config_db.connect()
+    entry = config_db.get_entry(CFG_ROUTE_TABLE, key)
+
+    if entry:
         if len(nexthop_str) == 2:
             ip = nexthop_str[1]
-            if vrf_name == "":
-                cmd += ' {}'.format(ip)
-            else:
-                cmd += ' {} vrf {}'.format(ip, vrf_name)
+
+            if not is_ipaddress(ip):
+                # ctx.fail("Invalid nexthop {}".format(ip))
+                click.echo("Invalid nexthop {}".format(ip))
+                ctx.exit(2)
+
+            if ip in entry.get("nexthop"):
+                val = filter(len, entry.get("nexthop").split(","))
+                idx = val.index(ip)
+                val.pop(idx)
+                entry["nexthop"] = ",".join(val)
+
+                val = filter(len, entry.get("ifname").split(","))
+                val.pop(idx)
+                entry["ifname"] = ",".join(val)
         elif len(nexthop_str) == 3:
+            if nexthop_str[1] != "dev":
+                ctx.fail("Unrecognized command")
+
             dev_name = nexthop_str[2]
-            if vrf_name == "":
-                cmd += ' {}'.format(dev_name)
-            else:
-                cmd += ' {} vrf {}'.format(dev_name, vrf_name)
+            if dev_name in entry.get("ifname"):
+                val = filter(len, entry.get("ifname").split(","))
+                idx = val.index(dev_name)
+                val.pop(idx)
+                entry["ifname"] = ",".join(val)
+
+                val = filter(len, entry.get("nexthop").split(","))
+                val.pop(idx)
+                entry["nexthop"] = ",".join(val)
         elif len(nexthop_str) == 4:
+            if nexthop_str[1] != "vrf":
+                ctx.fail("Unrecognized command")
+
             vrf_name_dst = nexthop_str[2]
             ip = nexthop_str[3]
-            if vrf_name == "":
-                cmd += ' {} nexthop-vrf {}'.format(ip, vrf_name_dst)
-            else:
-                cmd += ' {} vrf {} nexthop-vrf {}'.format(ip, vrf_name, vrf_name_dst)
+
+            if not is_ipaddress(ip):
+                # ctx.fail("Invalid nexthop {}".format(ip))
+                click.echo("Invalid nexthop {}".format(ip))
+                ctx.exit(2)
+
+            if ip + "@" + vrf_name_dst in entry.get("nexthop", "").split(","):
+                val = filter(len, entry.get("nexthop").split(","))
+                idx = val.index(ip + "@" + vrf_name_dst)
+                val.pop(idx)
+                entry["nexthop"] = ",".join(val)
+
+                val = filter(len, entry.get("ifname").split(","))
+                val.pop(idx)
+                entry["ifname"] = ",".join(val)
         else:
             ctx.fail("nexthop is not in pattern!")
-    cmd += '"'
-    run_command(cmd)
+
+        if len(filter(len, entry.get("nexthop").split(","))):
+            config_db.set_entry(CFG_ROUTE_TABLE, key, entry)
+        else:
+            config_db.set_entry(CFG_ROUTE_TABLE, key, None)
 
 #
 # 'acl' group ('config acl ...')
