@@ -2233,6 +2233,10 @@ def add_vlan_member(ctx, vid, interface_name, untagged):
     else:
         ctx.fail("{} does not exist".format(interface_name))
 
+    portchannel_member_table = db.get_table('PORTCHANNEL_MEMBER')
+    if (is_port and interface_is_in_portchannel(portchannel_member_table, interface_name)):
+        ctx.fail("{} is part of portchannel!".format(interface_name))
+
     if (is_port and is_port_router_interface(db, interface_name)) or \
        (not is_port and is_pc_router_interface(db, interface_name)):
         ctx.fail("{} is a L3 interface!".format(interface_name))
