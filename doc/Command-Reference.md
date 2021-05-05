@@ -5260,6 +5260,7 @@ Subsequent pages explain each of these commands in detail.
 
   Commands:
   alias        Show Interface Name/Alias Mapping
+  autoneg      Show Interface autoneg information
   breakout     Show Breakout Mode information by interfaces
   counters     Show interface counters
   description  Show interface status, protocol and...
@@ -5283,6 +5284,27 @@ Show Interface Name/Alias Mapping
   Ethernet8    hundredGigE3
   Ethernet12   hundredGigE4
   ... continue
+  ```
+
+**show interfaces autoneg**
+
+This show command displays the port auto-negotiation configuration and status for all interfaces. The 'N/A' in Adv All Speeds filed means that this configuration is not configured.
+
+- Usage:
+  ```
+  show interfaces autoneg status
+  show interfaces autoneg status <interface_name>
+  ```
+
+- Example:
+  ```
+admin@sonic:~$ show interfaces autoneg status
+  Interface   Auto-Neg Mode   Speed   Adv All Speeds   Oper   Admin
+----------- --------------- ------- ---------------- ------ -------
+  Ethernet0         enabled    2.5G          enabled   down      up
+  Ethernet1        disabled    2.5G         disabled   down    down
+  Ethernet2         enabled    2.5G              N/A   down    down
+  ...
   ```
 
 **show interfaces breakout**
@@ -5647,6 +5669,8 @@ This sub-section explains the following list of configuration on the interfaces.
 5) startup - to bring up the administratively shutdown interface
 6) breakout - to set interface breakout mode
 7) storm-control - to configure storm-control
+8) autoneg - to set interface auto negotiation mode
+9) adv-all-speeds - to set interface advertised-all-speeds mode
 
 From 201904 release onwards, the “config interface” command syntax is changed and the format is as follows:
 
@@ -6044,6 +6068,34 @@ All types of storm traffic can be configured independently on the interface at t
   +------------------+-------------------+---------------+---------------------+
   | Ethernet0        | unknown-unicast   |         50000 | 150                 |
   +------------------+-------------------+---------------+---------------------+
+  ```
+
+**config interface autoneg**
+
+This command is used to enable or disable auto negotition for an interface.
+
+- Usage:
+  ```
+  config interface autoneg <interface_name> (enabled | disabled)
+  ```
+
+- Examples:
+  ```
+  admin@sonic:~$ sudo config interface autoneg Ethernet0 enabled
+  ```
+
+**config interface adv-all-speeds**
+
+This command is used to enable or disable advertised-all-speeds for an interface.
+
+- Usage:
+  ```
+  config interface adv-all-speeds <interface_name> (enabled | disabled)
+  ```
+
+- Examples:
+  ```
+  admin@sonic:~$ sudo config interface adv-all-speeds Ethernet0 enabled
   ```
 
 Go Back To [Beginning of the document](#) or [Beginning of this section](#interfaces)
