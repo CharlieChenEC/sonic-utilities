@@ -5298,13 +5298,13 @@ This show command displays the port auto-negotiation configuration and status fo
 
 - Example:
   ```
-admin@sonic:~$ show interfaces autoneg status
-  Interface   Auto-Neg Mode   Speed   Adv All Speeds   Oper   Admin
------------ --------------- ------- ---------------- ------ -------
-  Ethernet0         enabled    2.5G          enabled   down      up
-  Ethernet1        disabled    2.5G         disabled   down    down
-  Ethernet2         enabled    2.5G              N/A   down    down
-  ...
+  admin@sonic:~$ show interfaces autoneg status
+    Interface   Auto-Neg Mode   Speed   Adv All Speeds   Oper   Admin
+  ----------- --------------- ------- ---------------- ------ -------
+    Ethernet0         enabled    2.5G          enabled   down      up
+    Ethernet1        disabled    2.5G         disabled   down    down
+    Ethernet2         enabled    2.5G              N/A   down    down
+    ...
   ```
 
 **show interfaces breakout**
@@ -5357,8 +5357,9 @@ The "current-mode" subcommand is used to display current breakout mode for all i
   | Ethernet0   | 4x25G[10G]              |
   +-------------+-------------------------+
   ```
-- NOTE:
-  - <a name="breakout_mode"></a>breakout_mode: number x speed1 [speed2, speed3]
+#### Note on Breakout Mode
+- [Note on Breakout Mode](#note-on-breakout-mode)
+  - breakout_mode: number x speed1 [speed2, speed3]
     - The parent port lanes are split up equally to the number of ports denoted by "number". The speed for each breakout port is default to speed1, and is changeable to speed2, speed3 etc.
     - For example: 4x25G[10G] on a QSFP port means, all lanes(i.e. 4 lanes) are equally assigned to four breakout ports(i.e. each port has one lane), and the port speed is 25G by default, and the speed could be changed to 10G later.
 
@@ -5947,8 +5948,7 @@ Dynamic breakout feature is yet to be supported in SONiC and hence uses cannot c
 
   ```
 
-- NOTE:
-  - [breakout mode](#breakout_mode)
+- [Note on Breakout Mode](#note-on-breakout-mode)
 
 
 **config interface transceiver lpmode**
