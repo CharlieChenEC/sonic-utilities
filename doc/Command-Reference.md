@@ -5358,10 +5358,9 @@ The "current-mode" subcommand is used to display current breakout mode for all i
   +-------------+-------------------------+
   ```
 #### Note on Breakout Mode
-- [Note on Breakout Mode](#note-on-breakout-mode)
-  - breakout_mode: number x speed1 [speed2, speed3]
-    - The parent port lanes are split up equally to the number of ports denoted by "number". The speed for each breakout port is default to speed1, and is changeable to speed2, speed3 etc.
-    - For example: 4x25G[10G] on a QSFP port means, all lanes(i.e. 4 lanes) are equally assigned to four breakout ports(i.e. each port has one lane), and the port speed is 25G by default, and the speed could be changed to 10G later.
+- breakout_mode: number x speed1 [speed2, speed3]
+  - The parent port lanes are split up equally to the number of ports denoted by "number". The speed for each breakout port is default to speed1, and is changeable to speed2, speed3 etc.
+  - For example: 4x25G[10G] on a QSFP port means, all lanes(i.e. 4 lanes) are equally assigned to four breakout ports(i.e. each port has one lane), and the port speed is 25G by default, and the speed could be changed to 10G later.
 
 **show interfaces counters**
 
@@ -6034,8 +6033,7 @@ kindly use, double tab i.e. <tab><tab> to see the available breakout option cust
   admin@sonic:~$ sudo config interface breakout  Ethernet0 4x25G[10G] -f -l -v -y
   ```
 
-- NOTE:
-  - [breakout mode](#breakout_mode)
+- [Note on Breakout Mode](#note-on-breakout-mode)
 
 
 **config interface storm-control**
